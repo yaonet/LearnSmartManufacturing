@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class MqttViewModel : PageViewModelBase
+    public class MqttViewModel : ObservableObject
     {
-        public override string Heading => "MQTT";
+        public string Heading => "MQTT";
     }
 }

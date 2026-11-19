@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class MvvmViewModel : PageViewModelBase
+    public class MvvmViewModel : ObservableObject
     {
-        public override string Heading => "MVVM";
+        public string Heading => "MVVM";
     }
 }

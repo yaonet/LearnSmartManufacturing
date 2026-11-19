@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Configuration;
-using System.Data;
 using System.Windows;
 using LearnSmartManufacturing.Services;
 using LearnSmartManufacturing.ViewModels;
@@ -18,9 +16,10 @@ namespace LearnSmartManufacturing
         public App()
         {
             _host = Host.CreateDefaultBuilder()
-                .ConfigureServices((context, services) =>
+                // The working directory is not the app directory when launched from a shortcut.
+                .UseContentRoot(AppContext.BaseDirectory)
+                .ConfigureServices((_, services) =>
                 {
-                    // Register your services here
                     services.AddSingleton<MainWindow>();
                     services.AddSingleton<MainWindowViewModel>();
 
@@ -38,23 +37,36 @@ namespace LearnSmartManufacturing
                 .Build();
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
-            await _host.StartAsync();
             base.OnStartup(e);
 
-            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-            mainWindow.DataContext = _host.Services.GetRequiredService<MainWindowViewModel>();
-            mainWindow.Show();
+            try
+            {
+                _host.Start();
+                _host.Services.GetRequiredService<MainWindow>().Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"应用程序启动失败：{ex.Message}", "Learn Smart Manufacturing",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(1);
+            }
         }
 
-        protected override async void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs e)
         {
-            await _host.StopAsync();
-            _host.Dispose();
+            // Block until the host has stopped; an async void here would let the process exit mid-shutdown.
+            try
+            {
+                _host.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+            }
+            finally
+            {
+                _host.Dispose();
+            }
+
             base.OnExit(e);
         }
-
     }
-
 }

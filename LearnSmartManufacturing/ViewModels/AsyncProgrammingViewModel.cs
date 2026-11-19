@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class AsyncProgrammingViewModel : PageViewModelBase
+    public class AsyncProgrammingViewModel : ObservableObject
     {
-        public override string Heading => "异步编程";
+        public string Heading => "异步编程";
     }
 }

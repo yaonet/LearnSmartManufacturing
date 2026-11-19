@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class MotionControlViewModel : PageViewModelBase
+    public class MotionControlViewModel : ObservableObject
     {
-        public override string Heading => "运动控制";
+        public string Heading => "运动控制";
     }
 }

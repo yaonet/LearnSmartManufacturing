@@ -1,8 +1,10 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class HomeViewModel : PageViewModelBase
+    public class HomeViewModel : ObservableObject
     {
-        public override string Heading => "首页";
+        public string Heading => "首页";
 
         public string Summary =>
             "Learn Smart Manufacturing 是一个面向智能制造 / 工业自动化上位机开发的学习项目，" +

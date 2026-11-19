@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class IndustrialCameraViewModel : PageViewModelBase
+    public class IndustrialCameraViewModel : ObservableObject
     {
-        public override string Heading => "工业相机";
+        public string Heading => "工业相机";
     }
 }

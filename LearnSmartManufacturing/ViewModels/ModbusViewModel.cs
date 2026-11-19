@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class ModbusViewModel : PageViewModelBase
+    public class ModbusViewModel : ObservableObject
     {
-        public override string Heading => "Modbus";
+        public string Heading => "Modbus";
     }
 }

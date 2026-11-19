@@ -1,7 +1,9 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace LearnSmartManufacturing.ViewModels
 {
-    public class EtherCatViewModel : PageViewModelBase
+    public class EtherCatViewModel : ObservableObject
     {
-        public override string Heading => "EtherCAT";
+        public string Heading => "EtherCAT";
     }
 }

@@ -5,7 +5,7 @@ namespace LearnSmartManufacturing.ViewModels
 {
     public record ThemeOption(string Name, ThemeMode Value);
 
-    public partial class SettingsViewModel : PageViewModelBase
+    public partial class SettingsViewModel : ObservableObject
     {
         public SettingsViewModel()
         {
@@ -21,7 +21,7 @@ namespace LearnSmartManufacturing.ViewModels
             SelectedTheme = ThemeOptions.FirstOrDefault(o => o.Value == current) ?? ThemeOptions[0];
         }
 
-        public override string Heading => "设置";
+        public string Heading => "设置";
 
         public IReadOnlyList<ThemeOption> ThemeOptions { get; }
 
