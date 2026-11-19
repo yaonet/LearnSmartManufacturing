@@ -2,12 +2,39 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:LearnSmartManufacturing"
-             StartupUri="MainWindow.xaml">
+             xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:views="clr-namespace:LearnSmartManufacturing.Views"
+             ThemeMode="System">
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/PresentationFramework.Fluent;component/Themes/Fluent.xaml" />
-            </ResourceDictionary.MergedDictionaries>
+            <!-- ViewModel -> View mappings used by the navigation host -->
+            <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+                <views:HomeView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:AsyncProgrammingViewModel}">
+                <views:AsyncProgrammingView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:MvvmViewModel}">
+                <views:MvvmView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ModbusViewModel}">
+                <views:ModbusView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:EtherCatViewModel}">
+                <views:EtherCatView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:MqttViewModel}">
+                <views:MqttView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:IndustrialCameraViewModel}">
+                <views:IndustrialCameraView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:MotionControlViewModel}">
+                <views:MotionControlView />
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
