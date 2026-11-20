@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LearnSmartManufacturing" xmlns:viewmodels="clr-namespace:LearnSmartManufacturing.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="680" Width="1000">
+        Title="{Binding Title}" Height="820" Width="1280">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="180" />

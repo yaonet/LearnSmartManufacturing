@@ -1,0 +1,447 @@
+<UserControl x:Class="LearnSmartManufacturing.Views.CameraSimulationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:CameraSimulationViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="760" d:DesignWidth="1100">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <SolidColorBrush x:Key="DofBrush" Color="#A6E3A1" />
+        <SolidColorBrush x:Key="FovBrush" Color="#89DCEB" />
+        <SolidColorBrush x:Key="ApertureBrush" Color="#CBA6F7" />
+        <SolidColorBrush x:Key="WarnBrush" Color="#F38BA8" />
+        <SolidColorBrush x:Key="RayBrush" Color="#F9E2AF" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="MetricLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="MetricValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+
+        <Style x:Key="MetricNote" TargetType="TextBlock" BasedOn="{StaticResource MetricLabel}">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="SliderBadge" TargetType="TextBlock">
+            <Setter Property="Width" Value="64" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
+        <!-- Green when the workpiece is inside the DOF, red otherwise -->
+        <Style x:Key="StatusText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInDof}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource DofBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Compact preset chips; the accent colour comes from the ListBox Tag -->
+        <Style x:Key="PresetListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBox">
+                        <ItemsPresenter />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="0,0,4,4" />
+                        <Setter Property="Padding" Value="4,5" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="FontFamily" Value="Consolas" />
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Root" CornerRadius="6" BorderThickness="1"
+                                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <Grid>
+                                            <Border x:Name="Tint" CornerRadius="5" Opacity="0"
+                                                    Background="{Binding Tag, RelativeSource={RelativeSource AncestorType=ListBox}}" />
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Tint" Property="Opacity" Value="0.22" />
+                                            <Setter TargetName="Root" Property="BorderBrush" Value="{Binding Tag, RelativeSource={RelativeSource AncestorType=ListBox}}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="16,12,16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="恢复默认参数" Command="{Binding ResetCommand}"
+                    VerticalAlignment="Center" AutomationProperties.Name="恢复默认参数" />
+            <StackPanel>
+                <TextBlock Text="工业相机 · 景深 (DOF) 与光路仿真器" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="薄透镜成像模型：调节焦距、工作距离、光圈、容许弥散圆，拖动工件观察清晰带与离焦模糊"
+                           Style="{StaticResource MetricLabel}" Margin="0,2,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Parameter panel -->
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="14,12">
+                        <TextBlock Text="传感器靶面" Style="{StaticResource SectionTitle}" />
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Sensors}"
+                                  SelectedItem="{Binding SelectedSensor}"
+                                  DisplayMemberPath="Display"
+                                  AutomationProperties.Name="传感器靶面" />
+                        <TextBlock Style="{StaticResource MetricNote}" Margin="0,4,0,0"
+                                   Text="{Binding SensorSpecText}" />
+
+                        <Separator Margin="0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}" Text="{Binding FocalText}" />
+                            <TextBlock Text="镜头焦距 f" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <Slider Margin="0,4,0,0" Minimum="{Binding MinFocalMm, Mode=OneWay}" Maximum="{Binding MaxFocalMm, Mode=OneWay}"
+                                Value="{Binding FocalMm}" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                AutomationProperties.Name="镜头焦距 f (毫米)" />
+                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource DofBrush}"
+                                 ItemsSource="{Binding FocalPresets}" SelectedItem="{Binding SelectedFocalPreset}"
+                                 DisplayMemberPath="Label">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="6" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                        </ListBox>
+
+                        <Separator Margin="0,8,0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}" Text="{Binding WdText}" />
+                            <TextBlock Text="工作距离 WD" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <Slider Margin="0,4,0,0" Minimum="{Binding MinWdMm, Mode=OneWay}" Maximum="{Binding MaxWdMm, Mode=OneWay}"
+                                Value="{Binding WdMm}" TickFrequency="5" IsSnapToTickEnabled="True"
+                                AutomationProperties.Name="工作距离 WD (毫米)" />
+
+                        <Separator Margin="0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}" Text="{Binding FNumberText}" />
+                            <TextBlock Text="光圈 F 值" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <Slider Margin="0,4,0,0" Minimum="{Binding MinFNumber, Mode=OneWay}" Maximum="{Binding MaxFNumber, Mode=OneWay}"
+                                Value="{Binding FNumber}" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                                AutomationProperties.Name="光圈 F 值" />
+                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource ApertureBrush}"
+                                 ItemsSource="{Binding FNumberPresets}" SelectedItem="{Binding SelectedFNumberPreset}"
+                                 DisplayMemberPath="Label">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="4" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                        </ListBox>
+                        <Border Margin="0,6,0,0" Padding="8,6" CornerRadius="6" Background="#26F38BA8"
+                                Visibility="{Binding ShowDiffractionWarning, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource WarnBrush}"
+                                       Text="⚠ 小孔径 (F ≥ 11) 衍射效应显著：艾里斑变大，反而使成像变模糊，景深收益有限。" />
+                        </Border>
+
+                        <Separator Margin="0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}" Text="{Binding CocLimitText}" Width="80" />
+                            <TextBlock Text="容许弥散圆 c" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource FovBrush}"
+                                 ItemsSource="{Binding CocPresets}" SelectedItem="{Binding SelectedCocPreset}">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding Caption}" FontSize="10" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Separator Margin="0,8,0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}" Text="{Binding DeltaZText}"
+                                       Width="80" />
+                            <TextBlock Text="工件偏移 ΔZ" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <Slider Margin="0,4,0,0" Minimum="{Binding DeltaZMinMm, Mode=OneWay}" Maximum="{Binding DeltaZMaxMm, Mode=OneWay}"
+                                Value="{Binding DeltaZMm}" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                                AutomationProperties.Name="工件偏移 ΔZ (毫米)" />
+                        <Button Content="归零到对焦面" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                                Command="{Binding ZeroDeltaZCommand}" AutomationProperties.Name="归零到对焦面" />
+                        <TextBlock Style="{StaticResource MetricNote}" Margin="0,6,0,0"
+                                   Text="也可在右侧光路图中直接上下拖动工件胶囊。" />
+
+                        <Separator Margin="0,12" />
+
+                        <TextBlock Text="图例" Style="{StaticResource SectionTitle}" />
+                        <WrapPanel>
+                            <WrapPanel.Resources>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Width" Value="9" />
+                                    <Setter Property="Height" Value="9" />
+                                    <Setter Property="Margin" Value="0,0,5,0" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                </Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="12" />
+                                    <Setter Property="Margin" Value="0,0,12,4" />
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                </Style>
+                            </WrapPanel.Resources>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Fill="{StaticResource FovBrush}" />
+                                <TextBlock Text="视野 FOV" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Fill="{StaticResource DofBrush}" />
+                                <TextBlock Text="景深 DOF / 传感器" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Fill="{StaticResource RayBrush}" />
+                                <TextBlock Text="主光线" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Fill="{StaticResource ApertureBrush}" />
+                                <TextBlock Text="光圈边缘光线" />
+                            </StackPanel>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Results and canvas -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <UniformGrid Rows="1" Columns="4">
+                    <UniformGrid.Resources>
+                        <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
+                            <Setter Property="Margin" Value="0,0,8,0" />
+                        </Style>
+                    </UniformGrid.Resources>
+
+                    <Border>
+                        <StackPanel>
+                            <TextBlock Text="视野 FOV" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding FovText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource FovBrush}"
+                                       AutomationProperties.Name="视野 FOV 数值" />
+                            <TextBlock Text="{Binding AngleText, StringFormat='2θ = {0}'}" Style="{StaticResource MetricNote}"
+                                       AutomationProperties.Name="视场角" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border>
+                        <StackPanel>
+                            <TextBlock Text="总景深 DOF" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding TotalDofText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource DofBrush}"
+                                       AutomationProperties.Name="总景深数值" />
+                            <TextBlock Text="{Binding HyperfocalText}" Style="{StaticResource MetricNote}" />
+                            <TextBlock Text="{Binding FrontRearDofText}" Style="{StaticResource MetricNote}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border>
+                        <StackPanel>
+                            <TextBlock Text="像素分辨率" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding PixelResText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource RayBrush}"
+                                       AutomationProperties.Name="像素分辨率数值" />
+                            <TextBlock Text="{Binding MagnificationText, StringFormat='放大倍率 β = {0}'}" Style="{StaticResource MetricNote}"
+                                       AutomationProperties.Name="放大倍率" />
+                            <TextBlock Text="{Binding ApertureText}" Style="{StaticResource MetricNote}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0">
+                        <StackPanel>
+                            <TextBlock Text="{Binding AiryText}" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding CocActualText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource ApertureBrush}" AutomationProperties.Name="实际弥散圆数值" />
+                            <TextBlock Text="{Binding CocStatusText}" Style="{StaticResource StatusText}" FontSize="12" FontWeight="SemiBold"
+                                       AutomationProperties.Name="景深状态" />
+                            <TextBlock Text="{Binding CocCompareText}" Style="{StaticResource MetricNote}" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True" MinHeight="360"
+                        Background="{StaticResource CanvasBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <Grid>
+                        <controls:DofOpticalCanvas Result="{Binding Result, Mode=OneWay}"
+                                                   DeltaZMm="{Binding DeltaZMm}"
+                                                   DeltaZLimitMm="{Binding DeltaZMaxMm, Mode=OneWay}" />
+
+                        <!-- Floating inset: zoomed Z profile and sensor preview -->
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12" Width="264"
+                                Background="#EB1E1E2E" BorderBrush="#313244" BorderThickness="1" CornerRadius="10" Padding="8">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="{Binding InsetToggleText}"
+                                            Command="{Binding ToggleInsetCommand}" Padding="8,1" FontSize="11"
+                                            AutomationProperties.Name="收起或展开小窗" />
+                                    <TextBlock Text="景深局部剖面 &amp; 成像模拟" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="#CDD6F4" VerticalAlignment="Center" />
+                                </DockPanel>
+
+                                <StackPanel Margin="0,8,0,0"
+                                            Visibility="{Binding IsInsetExpanded, Converter={StaticResource BoolToVisibility}}">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding ProfileSpanText}" FontFamily="Consolas" FontSize="10"
+                                                   Foreground="{StaticResource DofBrush}" />
+                                        <TextBlock Text="Z 轴局部放大剖面 (相对 WD)" FontFamily="Consolas" FontSize="10" Foreground="#A6ADC8" />
+                                    </DockPanel>
+                                    <Border Height="72" Margin="0,3,0,0" CornerRadius="6" BorderBrush="#313244" BorderThickness="1" ClipToBounds="True">
+                                        <controls:DofProfileCanvas Result="{Binding Result, Mode=OneWay}" />
+                                    </Border>
+
+                                    <DockPanel Margin="0,8,0,0">
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding PreviewBlurTag}" FontFamily="Consolas" FontSize="10"
+                                                   FontWeight="SemiBold" Style="{StaticResource StatusText}" />
+                                        <TextBlock Text="传感器实时成像预览" FontFamily="Consolas" FontSize="10" Foreground="#A6ADC8" />
+                                    </DockPanel>
+                                    <Border Height="108" Margin="0,3,0,0" CornerRadius="6" Background="#0B0B14"
+                                            BorderBrush="#313244" BorderThickness="1" ClipToBounds="True">
+                                        <Grid>
+                                            <Grid>
+                                                <Grid.Effect>
+                                                    <BlurEffect Radius="{Binding PreviewBlurRadius}" KernelType="Gaussian" RenderingBias="Performance" />
+                                                </Grid.Effect>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Viewbox Width="64" Height="64" Stretch="Uniform">
+                                                    <Canvas Width="64" Height="64">
+                                                        <Path Fill="#1E293B" Stroke="#E2E8F0" StrokeThickness="2.5" StrokeLineJoin="Round"
+                                                              Data="M28 6h8l1.6 6.4a18.2 18.2 0 0 1 5.6 2.3l5.7-3.4 5.7 5.7-3.4 5.7a18.2 18.2 0 0 1 2.3 5.6L60 28v8l-6.4 1.6a18.2 18.2 0 0 1-2.3 5.6l3.4 5.7-5.7 5.7-5.7-3.4a18.2 18.2 0 0 1-5.6 2.3L36 60h-8l-1.6-6.4a18.2 18.2 0 0 1-5.6-2.3l-5.7 3.4-5.7-5.7 3.4-5.7a18.2 18.2 0 0 1-2.3-5.6L4 36v-8l6.4-1.6a18.2 18.2 0 0 1 2.3-5.6l-3.4-5.7 5.7-5.7 5.7 3.4a18.2 18.2 0 0 1 5.6-2.3L28 6z" />
+                                                        <Ellipse Canvas.Left="22" Canvas.Top="22" Width="20" Height="20" Fill="#0B0B14"
+                                                                 Stroke="#89DCEB" StrokeThickness="2.5" />
+                                                        <Ellipse Canvas.Left="29.5" Canvas.Top="29.5" Width="5" Height="5" Fill="#A6E3A1" />
+                                                    </Canvas>
+                                                </Viewbox>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                                    <TextBlock Text="MVS-042" FontFamily="Consolas" FontWeight="Bold" FontSize="14" Foreground="White" />
+                                                    <StackPanel Orientation="Horizontal" Height="20" Margin="0,6">
+                                                        <StackPanel.Resources>
+                                                            <Style TargetType="Rectangle">
+                                                                <Setter Property="Fill" Value="White" />
+                                                                <Setter Property="VerticalAlignment" Value="Bottom" />
+                                                                <Setter Property="Margin" Value="0,0,2,0" />
+                                                            </Style>
+                                                        </StackPanel.Resources>
+                                                        <Rectangle Width="3" Height="20" />
+                                                        <Rectangle Width="3" Height="20" />
+                                                        <Rectangle Width="2" Height="16" />
+                                                        <Rectangle Width="2" Height="16" />
+                                                        <Rectangle Width="1.5" Height="14" />
+                                                        <Rectangle Width="1.5" Height="14" />
+                                                        <Rectangle Width="1" Height="12" />
+                                                        <Rectangle Width="1" Height="12" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="PITCH 0.25mm" FontFamily="Consolas" FontSize="9" Foreground="{StaticResource FovBrush}" />
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- Sensor crosshair and CoC badge stay sharp -->
+                                            <Grid IsHitTestVisible="False" Opacity="0.3">
+                                                <Rectangle Height="1" Fill="{StaticResource FovBrush}" VerticalAlignment="Center" />
+                                                <Rectangle Width="1" Fill="{StaticResource FovBrush}" HorizontalAlignment="Center" />
+                                            </Grid>
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,4"
+                                                    Padding="5,1" CornerRadius="3" Background="#B3000000">
+                                                <TextBlock Text="{Binding PreviewBadgeText}" FontFamily="Consolas" FontSize="9"
+                                                           Style="{StaticResource StatusText}" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

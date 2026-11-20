@@ -33,7 +33,8 @@ namespace LearnSmartManufacturing
                     services.AddTransient<MqttViewModel>();
                     services.AddTransient<IndustrialCameraViewModel>();
                     services.AddTransient<LensFocalLengthViewModel>();
-                                        services.AddTransient<MotionControlViewModel>();
+                    services.AddTransient<CameraSimulationViewModel>();
+                    services.AddTransient<MotionControlViewModel>();
                 })
                 .Build();
         }
