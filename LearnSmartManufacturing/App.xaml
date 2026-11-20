@@ -32,6 +32,9 @@
             <DataTemplate DataType="{x:Type vm:IndustrialCameraViewModel}">
                 <views:IndustrialCameraView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:LensFocalLengthViewModel}">
+                <views:LensFocalLengthView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:MotionControlViewModel}">
                 <views:MotionControlView />
             </DataTemplate>

@@ -23,7 +23,8 @@ namespace LearnSmartManufacturing.ViewModels
                     new NavigationItem("EtherCAT", typeof(EtherCatViewModel)),
                     new NavigationItem("MQTT", typeof(MqttViewModel))),
                 new NavigationItem("机器视觉", null,
-                    new NavigationItem("工业相机", typeof(IndustrialCameraViewModel))),
+                    new NavigationItem("工业相机", typeof(IndustrialCameraViewModel)),
+                    new NavigationItem("镜头焦距", typeof(LensFocalLengthViewModel))),
                 new NavigationItem("运动控制", typeof(MotionControlViewModel)),
             ];
             SettingsItem = new NavigationItem("设置", typeof(SettingsViewModel));
