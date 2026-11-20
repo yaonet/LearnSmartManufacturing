@@ -1,11 +1,112 @@
 <UserControl x:Class="LearnSmartManufacturing.Views.IndustrialCameraView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
-             d:DataContext="{d:DesignInstance Type=vm:IndustrialCameraViewModel}"
-             mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+			 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+			 d:DataContext="{d:DesignInstance Type=vm:IndustrialCameraViewModel}"
+			 mc:Ignorable="d"
+			 d:DesignHeight="600" d:DesignWidth="760">
+	<UserControl.Resources>
+		<Style x:Key="MetricLabel" TargetType="TextBlock">
+			<Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+			<Setter Property="FontSize" Value="12" />
+		</Style>
+
+		<Style x:Key="MetricValue" TargetType="TextBlock">
+			<Setter Property="FontSize" Value="28" />
+			<Setter Property="FontWeight" Value="SemiBold" />
+			<Setter Property="Margin" Value="0,4" />
+		</Style>
+	</UserControl.Resources>
+
+	<ScrollViewer VerticalScrollBarVisibility="Auto">
+		<Border Margin="24" MaxWidth="900" Padding="20,16" CornerRadius="8" BorderThickness="1"
+				VerticalAlignment="Top"
+				Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+				BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+			<StackPanel>
+				<TextBlock Text="相机选型计算器" FontSize="20" FontWeight="SemiBold" />
+				<TextBlock Margin="0,4,0,16" TextWrapping="Wrap"
+						   Text="输入像素精度与检测目标的长、宽，反推所需的相机分辨率与像素数"
+						   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+
+				<Grid>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition />
+						<ColumnDefinition Width="16" />
+						<ColumnDefinition />
+						<ColumnDefinition Width="16" />
+						<ColumnDefinition />
+					</Grid.ColumnDefinitions>
+
+					<StackPanel Grid.Column="0">
+						<TextBlock Text="像素精度 a (mm/px)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
+						<TextBox Text="{Binding PixelAccuracyText, UpdateSourceTrigger=PropertyChanged}"
+								 AutomationProperties.Name="像素精度 (毫米每像素)" />
+					</StackPanel>
+
+					<StackPanel Grid.Column="2">
+						<TextBlock Text="目标长度 L (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
+						<TextBox Text="{Binding TargetLengthText, UpdateSourceTrigger=PropertyChanged}"
+								 AutomationProperties.Name="目标长度 (毫米)" />
+					</StackPanel>
+
+					<StackPanel Grid.Column="4">
+						<TextBlock Text="目标宽度 W (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
+						<TextBox Text="{Binding TargetWidthText, UpdateSourceTrigger=PropertyChanged}"
+								 AutomationProperties.Name="目标宽度 (毫米)" />
+					</StackPanel>
+				</Grid>
+
+				<Border Margin="0,16,0,0" Padding="20,16" CornerRadius="8"
+						Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+					<StackPanel>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition />
+								<ColumnDefinition />
+							</Grid.ColumnDefinitions>
+
+							<StackPanel>
+								<TextBlock Text="所需相机分辨率 (长 × 宽)" Style="{StaticResource MetricLabel}" />
+								<TextBlock Text="{Binding ResolutionText}" Style="{StaticResource MetricValue}" />
+							</StackPanel>
+
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="所需像素数" Style="{StaticResource MetricLabel}" />
+								<TextBlock Text="{Binding PixelCountText}" Style="{StaticResource MetricValue}" FontSize="20"
+										   TextWrapping="Wrap" Margin="0,10,0,4" />
+							</StackPanel>
+						</Grid>
+
+						<TextBlock Text="{Binding Hint}" Foreground="#DE2D29" FontSize="12">
+							<TextBlock.Style>
+								<Style TargetType="TextBlock">
+									<Setter Property="Visibility" Value="Visible" />
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding HasResult}" Value="True">
+											<Setter Property="Visibility" Value="Collapsed" />
+										</DataTrigger>
+									</Style.Triggers>
+								</Style>
+							</TextBlock.Style>
+						</TextBlock>
+						<TextBlock Text="{Binding RecommendationText}" FontSize="12" Margin="0,4,0,4" TextWrapping="Wrap"
+								   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+
+						<Separator Margin="0,8" />
+
+						<TextBlock Text="计算公式" Style="{StaticResource MetricLabel}" />
+						<TextBlock Text="Nx = L / a　　Ny = W / a　　N = Nx × Ny" FontFamily="Consolas" FontSize="16" Margin="0,4,0,0" />
+						<TextBlock Text="{Binding Substitution}" FontFamily="Consolas" FontSize="16" Margin="0,4,0,0"
+								   TextWrapping="Wrap" />
+						<TextBlock Margin="0,8,0,0" FontSize="12" TextWrapping="Wrap"
+								   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+								   Text="像素精度 a 是单个像素对应的实际尺寸 (mm/px)；目标长度 L、宽度 W 即需要完整拍入视野的范围，各方向所需像素数向上取整。结果为理论最小值，未计入视野余量，实际选型建议再留 10%～20% 余量。" />
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</Border>
+	</ScrollViewer>
 </UserControl>
