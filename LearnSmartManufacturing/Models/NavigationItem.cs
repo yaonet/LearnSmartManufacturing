@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace LearnSmartManufacturing.ViewModels
+namespace LearnSmartManufacturing.Models
 {
     /// <summary>
     /// A menu node. A node with children is a group; a node without children

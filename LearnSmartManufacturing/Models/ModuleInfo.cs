@@ -1,4 +1,4 @@
-namespace LearnSmartManufacturing.ViewModels
+namespace LearnSmartManufacturing.Models
 {
     public record ModuleInfo(string Name, string Description);
 }

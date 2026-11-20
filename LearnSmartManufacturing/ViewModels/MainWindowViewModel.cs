@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using LearnSmartManufacturing.Models;
 using LearnSmartManufacturing.Services;
 using System.ComponentModel;
 
