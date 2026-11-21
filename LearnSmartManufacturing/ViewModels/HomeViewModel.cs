@@ -13,7 +13,7 @@ namespace LearnSmartManufacturing.ViewModels
 
         public IReadOnlyList<ModuleInfo> Modules { get; } =
         [
-            new ModuleInfo("WPF", "异步编程、MVVM：构建响应流畅、结构清晰的上位机界面。"),
+            new ModuleInfo("WPF", "异步编程（UI 心跳/死锁、Channel 背压、SemaphoreSlim 限流）与 MVVM 架构实践。"),
             new ModuleInfo("协议", "Modbus、EtherCAT、MQTT：设备通信与数据采集、上云。"),
             new ModuleInfo("机器视觉", "工业相机选型、镜头焦距与视场角光路、景深 (DOF) 与成像仿真。"),
             new ModuleInfo("运动控制", "单轴 PLCopen 状态机与 T/S 规划、XY 双轴直线/圆弧插补、点位示教配方与 PSO 飞拍仿真。"),

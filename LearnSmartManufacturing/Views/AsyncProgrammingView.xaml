@@ -4,8 +4,409 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:asyncModels="clr-namespace:LearnSmartManufacturing.Models.Async"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:AsyncProgrammingViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+
+        <Style x:Key="MetricNote" TargetType="TextBlock" BasedOn="{StaticResource MetricLabel}">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="CompactSliderBadge" TargetType="TextBlock" BasedOn="{StaticResource SliderBadge}">
+            <Setter Property="Width" Value="78" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <DataTemplate x:Key="AsyncLogTemplate" DataType="{x:Type asyncModels:AsyncLogEntry}">
+            <DockPanel Margin="0,1">
+                <TextBlock DockPanel.Dock="Left" Text="{Binding TimeText}" FontFamily="Consolas" FontSize="11"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding ThreadText, StringFormat='[{0}]'}" FontFamily="Consolas" FontSize="11"
+                           Foreground="{StaticResource CyanMetricBrush}" Margin="0,0,6,0" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Level, StringFormat='[{0}]'}" FontFamily="Consolas" FontSize="11"
+                           FontWeight="SemiBold" Width="54">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="Warn">
+                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding Message}" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <Style x:Key="AsyncLogListBoxStyle" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemTemplate" Value="{StaticResource AsyncLogTemplate}" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="2,1" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <TabControl Margin="12,8,12,12">
+        <!-- Tab 1: UI Responsiveness, Deadlock & Channel<T> Backpressure Lab -->
+        <TabItem Header="UI 响应性与 Channel 背压">
+            <Grid Margin="4,10,4,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <StackPanel Margin="0,0,0,8">
+                    <TextBlock Text="WPF 异步响应性与 Channel&lt;T&gt; 生产者-消费者实验室" FontSize="19" FontWeight="SemiBold" />
+                    <TextBlock Text="实测 UI 线程阻塞、SynchronizationContext 死锁与 ConfigureAwait(false) 破局，以及有界 Channel 背压与丢帧策略"
+                               Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Live 60 FPS UI Heartbeat Bar -->
+                <Border Grid.Row="1" Height="34" Margin="0,0,0,10" CornerRadius="6" ClipToBounds="True">
+                    <controls:UiHeartbeatCanvas />
+                </Border>
+
+                <!-- Main Split -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="346" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Controls -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <!-- UI Thread Responsiveness & Deadlock Experiment -->
+                                <TextBlock Text="1. UI 阻塞与死锁现场对照" Style="{StaticResource SectionTitle}" />
+                                <UniformGrid Columns="2" Margin="0,0,0,6">
+                                    <Button Content="同步阻塞 (1.2s)" Command="{Binding RunSyncBlockCommand}" Margin="0,0,4,0"
+                                            AutomationProperties.Name="同步阻塞实验" />
+                                    <Button Content="async/await 非阻塞" Command="{Binding RunAsyncNonBlockingCommand}" Margin="4,0,0,0"
+                                            AutomationProperties.Name="异步非阻塞实验" />
+                                </UniformGrid>
+                                <UniformGrid Columns="2" Margin="0,0,0,6">
+                                    <Button Content="复现死锁 (.Wait)" Command="{Binding RunDeadlockDemoCommand}" Margin="0,0,4,0"
+                                            AutomationProperties.Name="复现同步等待死锁" />
+                                    <Button Content="ConfigureAwait(false)" Command="{Binding RunConfigureAwaitFixCommand}" Margin="4,0,0,0"
+                                            AutomationProperties.Name="ConfigureAwait对照实验" />
+                                </UniformGrid>
+                                <DockPanel Margin="0,0,0,4">
+                                    <Button DockPanel.Dock="Right" Content="取消" Command="{Binding CancelResponsivenessCommand}"
+                                            IsEnabled="{Binding IsResponsivenessBusy}" Padding="8,2" FontSize="11" Margin="8,0,0,0" />
+                                    <ProgressBar Height="8" Minimum="0" Maximum="100" Value="{Binding ResponsivenessProgress, Mode=OneWay}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <TextBlock Text="{Binding ResponsivenessStatusText}" Style="{StaticResource MetricLabel}" TextWrapping="Wrap" />
+
+                                <Separator Margin="0,12" />
+
+                                <!-- Channel<T> Pipeline Controls -->
+                                <TextBlock Text="2. BoundedChannel&lt;T&gt; 采图管道仿真" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="背压策略 (BoundedChannelFullMode)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <ComboBox ItemsSource="{Binding FullModeOptions}" SelectedItem="{Binding SelectedFullMode}"
+                                          DisplayMemberPath="Name" Margin="0,0,0,8"
+                                          AutomationProperties.Name="Channel背压策略" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding ProduceRateText}" />
+                                    <TextBlock Text="采集速率 (实时可调)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="10" Maximum="160" Value="{Binding ProduceRateHz}"
+                                        TickFrequency="10" IsSnapToTickEnabled="True" AutomationProperties.Name="生产者采集速率" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding ProcessTimeText}" />
+                                    <TextBlock Text="单帧处理耗时 (实时可调)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="10" Maximum="120" Value="{Binding ProcessTimeMs}"
+                                        TickFrequency="5" IsSnapToTickEnabled="True" AutomationProperties.Name="消费者处理耗时" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding CapacityText}" />
+                                    <TextBlock Text="有界队列容量 (重启生效)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="4" Maximum="24" Value="{Binding ChannelCapacity}"
+                                        TickFrequency="4" IsSnapToTickEnabled="True" AutomationProperties.Name="有界队列容量" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding WorkerCountText}" />
+                                    <TextBlock Text="消费者 Worker 数 (重启生效)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,10" Minimum="1" Maximum="4" Value="{Binding WorkerCount}"
+                                        TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="消费者Worker数量" />
+
+                                <UniformGrid Columns="2">
+                                    <Button Content="启动 / 应用配置" Command="{Binding StartPipelineCommand}" Margin="0,0,4,0" />
+                                    <Button Content="停止流水线" Command="{Binding StopPipelineCommand}" Margin="4,0,0,0" />
+                                </UniformGrid>
+                                <TextBlock Style="{StaticResource MetricLabel}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                           Text="提示：启动后可动态拖动“采集速率”超过“消费能力 (Worker×1000/耗时)”，观察队列涨满时 Wait 背压与 DropOldest 丢帧的差异。" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right Pipeline Cards + Canvas + Logs -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="120" />
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="0" Rows="1" Columns="4">
+                            <UniformGrid.Resources>
+                                <Style TargetType="Border" BasedOn="{StaticResource CompactCardStyle}">
+                                    <Setter Property="Margin" Value="0,0,8,0" />
+                                </Style>
+                            </UniformGrid.Resources>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="累计生产帧" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ProducedText}" Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource CyanMetricBrush}" />
+                                    <TextBlock Text="{Binding ProduceRateText, StringFormat='设定 {0}'}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="累计消费帧" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ConsumedText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    <TextBlock Text="{Binding ThroughputSubText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="丢弃帧数" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding DroppedText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    <TextBlock Text="{Binding BackpressureSubText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="当前队列水位" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding QueueDepthText}" Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource PurpleMetricBrush}" />
+                                    <TextBlock Text="{Binding LatencySubText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True" MinHeight="240"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:ChannelPipelineCanvas Snapshot="{Binding PipelineSnapshot, Mode=OneWay}" />
+                        </Border>
+
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,4">
+                                    <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearTab1LogsCommand}"
+                                            Padding="8,1" FontSize="11" />
+                                    <TextBlock Text="线程与异步事件日志（含托管 ThreadId，最新在前）" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding Tab1Logs}" Style="{StaticResource AsyncLogListBoxStyle}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </TabItem>
+
+        <!-- Tab 2: Multi-Device Parallel Polling (Task.WhenAll + SemaphoreSlim + Linked Cancellation) -->
+        <TabItem Header="多设备并行限流 &amp; 联动取消">
+            <Grid Margin="4,10,4,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Margin="0,0,0,10">
+                    <TextBlock Text="多设备并行巡检 · SemaphoreSlim 限流与全链路取消" FontSize="19" FontWeight="SemiBold" />
+                    <TextBlock Text="模拟上位机同时巡检 8 台现场设备（相机 / PLC / 扫码枪 / 温控仪），演示 Task.WhenAll、并发限流、单设备超时与异常隔离"
+                               Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="336" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Batch Controls -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="并发限流与超时配置" Style="{StaticResource SectionTitle}" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding MaxConcurrencyText}" />
+                                    <TextBlock Text="SemaphoreSlim 最大并发数" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,8" Minimum="1" Maximum="8" Value="{Binding MaxConcurrency}"
+                                        TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="最大并发数" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding DeviceTimeoutText}" />
+                                    <TextBlock Text="单设备超时 (CancelAfter)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,10" Minimum="300" Maximum="1200" Value="{Binding DeviceTimeoutMs}"
+                                        TickFrequency="50" IsSnapToTickEnabled="True" AutomationProperties.Name="单设备超时时间" />
+
+                                <Separator Margin="0,8,0,10" />
+
+                                <TextBlock Text="单点故障注入（验证异常隔离）" Style="{StaticResource SectionTitle}" />
+                                <CheckBox Content="TMP-01 固化炉模拟超时 (触发 Linked CTS)" IsChecked="{Binding InjectTimeoutOnTmp01}" Margin="0,0,0,6" />
+                                <CheckBox Content="BAR-01 扫码枪模拟通信异常 (IOException)" IsChecked="{Binding InjectFaultOnBar01}" Margin="0,0,0,12" />
+
+                                <UniformGrid Columns="2" Margin="0,0,0,10">
+                                    <Button Content="启动并行巡检" Command="{Binding RunDeviceBatchCommand}" Margin="0,0,4,0" />
+                                    <Button Content="取消全部任务" Command="{Binding CancelDeviceBatchCommand}" Margin="4,0,0,0" />
+                                </UniformGrid>
+
+                                <Separator Margin="0,6,0,10" />
+
+                                <TextBlock Text="面试要点速览" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                           Text="• 调节最大并发数 1 → 3 → 8，观察排队灰条缩短与总耗时加速比变化。" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                           Text="• 单设备超时使用 CreateLinkedTokenSource(globalCt) + CancelAfter，超时仅中断单路，不拖垮其它 7 台设备。" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                           Text="• 运行中途点击“取消全部任务”或切换左侧导航页，可验证全局 CancellationToken 立即释放所有信号量与任务。" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right Metrics + Gantt Canvas + Logs -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="124" />
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="0" Rows="1" Columns="4">
+                            <UniformGrid.Resources>
+                                <Style TargetType="Border" BasedOn="{StaticResource CompactCardStyle}">
+                                    <Setter Property="Margin" Value="0,0,8,0" />
+                                </Style>
+                            </UniformGrid.Resources>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="当前 / 限流并发" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ConcurrencyCardText}" Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource CyanMetricBrush}" />
+                                    <TextBlock Text="{Binding PeakConcurrencySubText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="本批实测耗时" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ElapsedCardText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    <TextBlock Text="{Binding SerialSubText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="并行加速比" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding SpeedupCardText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                    <TextBlock Text="串行耗时 / 并行实测" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="巡检结果统计" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding BatchOutcomeText}" Style="{StaticResource CompactMetricValue}" FontSize="17" Margin="0,6,0,2"
+                                               Foreground="{StaticResource PurpleMetricBrush}" />
+                                    <TextBlock Text="单点异常隔离捕获" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True" MinHeight="260"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:ConcurrencyGanttCanvas Snapshot="{Binding OrchestrationSnapshot, Mode=OneWay}" />
+                        </Border>
+
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,4">
+                                    <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearTab2LogsCommand}"
+                                            Padding="8,1" FontSize="11" />
+                                    <TextBlock Text="并行调度事件日志（含线程池 ThreadId，最新在前）" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding Tab2Logs}" Style="{StaticResource AsyncLogListBoxStyle}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </UserControl>
