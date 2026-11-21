@@ -2,12 +2,12 @@ using LearnSmartManufacturing.ViewModels;
 
 namespace LearnSmartManufacturing.Tests.ViewModels
 {
-    public class IndustrialCameraViewModelTests
+    public class CameraViewModelTests
     {
         [Fact]
         public void Defaults_ComputeExpectedResolutionAndRecommendation()
         {
-            var vm = new IndustrialCameraViewModel();
+            var vm = new CameraViewModel();
 
             Assert.True(vm.HasResult);
             Assert.Equal("2,000 × 1,600 px", vm.ResolutionText);
@@ -19,7 +19,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void Recommendation_AcceptsRotatedSensorOrientation()
         {
-            var vm = new IndustrialCameraViewModel
+            var vm = new CameraViewModel
             {
                 PixelAccuracyText = "0.1",
                 TargetLengthText = "100",
@@ -33,7 +33,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void Recommendation_ExceedingStandardAreaScan_SuggestsLineScanOrMultiCamera()
         {
-            var vm = new IndustrialCameraViewModel
+            var vm = new CameraViewModel
             {
                 PixelAccuracyText = "0.01",
                 TargetLengthText = "200",
@@ -51,7 +51,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [InlineData("abc", "100", "80")]
         public void InvalidInputs_HideResultAndShowPositiveHint(string accuracy, string length, string width)
         {
-            var vm = new IndustrialCameraViewModel
+            var vm = new CameraViewModel
             {
                 PixelAccuracyText = accuracy,
                 TargetLengthText = length,
@@ -71,7 +71,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [InlineData("1e-300", "1e20", "80")]
         public void OverflowingInputs_HideResultAndShowRangeHint(string accuracy, string length, string width)
         {
-            var vm = new IndustrialCameraViewModel
+            var vm = new CameraViewModel
             {
                 PixelAccuracyText = accuracy,
                 TargetLengthText = length,

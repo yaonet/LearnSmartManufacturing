@@ -15,7 +15,7 @@ namespace LearnSmartManufacturing.ViewModels
         [
             new ModuleInfo("WPF", "异步编程（UI 心跳/Channel 背压/限流）与 MVVM（校验/命令/WeakReferenceMessenger 解耦）。"),
             new ModuleInfo("协议", "Modbus（TCP/RTU 帧解剖与模拟 PLC）、MQTT（QoS 握手/通配符/LWT/断网续传）、EtherCAT（ESM/LRW/WKC/CoE SDO/DC 同步）。"),
-            new ModuleInfo("机器视觉", "工业相机选型、镜头焦距与视场角光路、景深 (DOF) 与成像仿真。"),
+            new ModuleInfo("机器视觉", "工业相机选型、镜头焦距与视场角光路、工业光源打光与光谱互补色仿真、景深 (DOF) 成像仿真。"),
             new ModuleInfo("运动控制", "单轴 PLCopen 状态机与 T/S 规划、XY 双轴直线/圆弧插补、点位示教配方与 PSO 飞拍仿真。"),
         ];
 

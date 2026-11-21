@@ -33,14 +33,17 @@
             <DataTemplate DataType="{x:Type vm:MqttViewModel}">
                 <views:MqttView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:IndustrialCameraViewModel}">
-                <views:IndustrialCameraView />
+            <DataTemplate DataType="{x:Type vm:CameraViewModel}">
+                <views:CameraView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:LensFocalLengthViewModel}">
-                <views:LensFocalLengthView />
+            <DataTemplate DataType="{x:Type vm:LensViewModel}">
+                <views:LensView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:CameraSimulationViewModel}">
-                <views:CameraSimulationView />
+            <DataTemplate DataType="{x:Type vm:LightingViewModel}">
+                <views:LightingView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SimulationViewModel}">
+                <views:SimulationView />
             </DataTemplate>
             <DataTemplate DataType="{x:Type vm:MotionControlViewModel}">
                 <views:MotionControlView />

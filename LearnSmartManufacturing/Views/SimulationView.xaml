@@ -1,11 +1,11 @@
-<UserControl x:Class="LearnSmartManufacturing.Views.CameraSimulationView"
+<UserControl x:Class="LearnSmartManufacturing.Views.SimulationView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
              xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
-             d:DataContext="{d:DesignInstance Type=vm:CameraSimulationViewModel}"
+             d:DataContext="{d:DesignInstance Type=vm:SimulationViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="760" d:DesignWidth="1100">
     <UserControl.Resources>

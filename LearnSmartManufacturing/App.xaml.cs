@@ -33,9 +33,10 @@ namespace LearnSmartManufacturing
                     services.AddTransient<ModbusViewModel>();
                     services.AddTransient<EtherCatViewModel>();
                     services.AddTransient<MqttViewModel>();
-                    services.AddSingleton<IndustrialCameraViewModel>();
-                    services.AddSingleton<LensFocalLengthViewModel>();
-                    services.AddSingleton<CameraSimulationViewModel>();
+                    services.AddSingleton<CameraViewModel>();
+                    services.AddSingleton<LensViewModel>();
+                    services.AddSingleton<LightingViewModel>();
+                    services.AddSingleton<SimulationViewModel>();
                     services.AddScoped<IMotionAxis>(_ => new SimulatedMotionAxis());
                     services.AddScoped<IXyMotionStage>(_ => new SimulatedXyMotionStage());
                     services.AddTransient<MotionControlViewModel>();

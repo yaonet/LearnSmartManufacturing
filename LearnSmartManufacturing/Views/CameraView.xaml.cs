@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace LearnSmartManufacturing.Views
 {
-    public partial class IndustrialCameraView : UserControl
+    public partial class CameraView : UserControl
     {
-        public IndustrialCameraView()
+        public CameraView()
         {
             InitializeComponent();
         }

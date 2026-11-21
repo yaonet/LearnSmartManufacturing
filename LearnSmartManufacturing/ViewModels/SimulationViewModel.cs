@@ -11,7 +11,7 @@ namespace LearnSmartManufacturing.ViewModels
 
     public record ValuePreset(string Label, double Value, string? Caption = null);
 
-    public partial class CameraSimulationViewModel : ObservableObject
+    public partial class SimulationViewModel : ObservableObject
     {
         public const double DeltaZLimitMm = 60;
 
@@ -36,7 +36,7 @@ namespace LearnSmartManufacturing.ViewModels
         private double _blurPx;
         private bool _isBatchUpdating;
 
-        public CameraSimulationViewModel()
+        public SimulationViewModel()
         {
             Sensors =
             [
@@ -102,7 +102,7 @@ namespace LearnSmartManufacturing.ViewModels
         [NotifyPropertyChangedFor(nameof(InsetToggleText))]
         public partial bool IsInsetExpanded { get; set; } = false;
 
-        public string Heading => "相机仿真";
+        public string Heading => "仿真";
 
         public string InsetToggleText => IsInsetExpanded ? "收起" : "展开";
 

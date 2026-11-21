@@ -4,9 +4,9 @@ using LearnSmartManufacturing.ViewModels;
 
 namespace LearnSmartManufacturing.Views
 {
-    public partial class LensFocalLengthView : UserControl
+    public partial class LensView : UserControl
     {
-        public LensFocalLengthView()
+        public LensView()
         {
             InitializeComponent();
         }
@@ -16,7 +16,7 @@ namespace LearnSmartManufacturing.Views
         // Left/Right (or Down/Up) on the diagram adjusts the focal length by 1 mm.
         private void Diagram_KeyDown(object sender, KeyEventArgs e)
         {
-            if (DataContext is not LensFocalLengthViewModel vm)
+            if (DataContext is not LensViewModel vm)
             {
                 return;
             }

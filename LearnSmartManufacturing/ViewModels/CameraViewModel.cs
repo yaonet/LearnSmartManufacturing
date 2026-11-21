@@ -8,7 +8,7 @@ namespace LearnSmartManufacturing.ViewModels
         public double Megapixels => Width * (double)Height / 1_000_000;
     }
 
-    public partial class IndustrialCameraViewModel : ObservableObject
+    public partial class CameraViewModel : ObservableObject
     {
         private static readonly CameraModelSpec[] StandardCameras =
         [
@@ -24,7 +24,7 @@ namespace LearnSmartManufacturing.ViewModels
             new("5000 万", 8192, 6144),
         ];
 
-        public string Heading => "工业相机";
+        public string Heading => "相机";
 
         // Inputs are kept as text so that an empty or partially typed box simply shows a hint instead of a binding error.
         [ObservableProperty]

@@ -2,12 +2,12 @@ using LearnSmartManufacturing.ViewModels;
 
 namespace LearnSmartManufacturing.Tests.ViewModels
 {
-    public class CameraSimulationViewModelTests
+    public class SimulationViewModelTests
     {
         [Fact]
         public void ResetCommand_RestoresDefaultsInSingleRecompute()
         {
-            var vm = new CameraSimulationViewModel
+            var vm = new SimulationViewModel
             {
                 SelectedSensor = null,
             };
@@ -21,7 +21,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             var resultNotifications = 0;
             vm.PropertyChanged += (_, e) =>
             {
-                if (e.PropertyName == nameof(CameraSimulationViewModel.Result))
+                if (e.PropertyName == nameof(SimulationViewModel.Result))
                 {
                     resultNotifications++;
                 }
@@ -41,7 +41,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void ZeroDeltaZAndToggleInsetCommands_UpdateState()
         {
-            var vm = new CameraSimulationViewModel { DeltaZMm = 25 };
+            var vm = new SimulationViewModel { DeltaZMm = 25 };
 
             vm.ZeroDeltaZCommand.Execute(null);
             Assert.Equal(0, vm.DeltaZMm);
@@ -57,7 +57,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void SmallAperture_TriggersDiffractionWarning()
         {
-            var vm = new CameraSimulationViewModel { FNumber = 8.0 };
+            var vm = new SimulationViewModel { FNumber = 8.0 };
             Assert.False(vm.ShowDiffractionWarning);
 
             vm.FNumber = 11.0;
@@ -67,7 +67,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void Presets_SynchronizeWithNumericProperties()
         {
-            var vm = new CameraSimulationViewModel();
+            var vm = new SimulationViewModel();
 
             vm.SelectedFocalPreset = vm.FocalPresets.First(p => p.Value == 25);
             Assert.Equal(25, vm.FocalMm);

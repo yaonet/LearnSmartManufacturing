@@ -2,12 +2,12 @@ using LearnSmartManufacturing.ViewModels;
 
 namespace LearnSmartManufacturing.Tests.ViewModels
 {
-    public class LensFocalLengthViewModelTests
+    public class LensViewModelTests
     {
         [Fact]
         public void Defaults_UseConsistentTwoThirdsInchSensorWidth()
         {
-            var vm = new LensFocalLengthViewModel();
+            var vm = new LensViewModel();
 
             Assert.Equal(8.45, vm.SensorWidth);
             Assert.NotNull(vm.SelectedSensorPreset);
@@ -20,7 +20,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void FocalLengthAndPreset_SynchronizeBidirectionally()
         {
-            var vm = new LensFocalLengthViewModel();
+            var vm = new LensViewModel();
 
             vm.SelectedPreset = vm.Presets[3]; // 50 mm
             Assert.Equal(50, vm.FocalLength);
@@ -35,7 +35,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void SensorWidthTextAndPreset_SynchronizeBidirectionally()
         {
-            var vm = new LensFocalLengthViewModel();
+            var vm = new LensViewModel();
 
             vm.SelectedSensorPreset = vm.SensorPresets[3]; // 1" (12.8 mm)
             Assert.Equal("12.8", vm.SensorWidthText);
@@ -50,7 +50,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         [Fact]
         public void InvalidCalculatorInput_ClearsResultAndShowsHint()
         {
-            var vm = new LensFocalLengthViewModel
+            var vm = new LensViewModel
             {
                 FovWidthText = "0",
             };

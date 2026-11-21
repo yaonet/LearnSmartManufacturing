@@ -8,11 +8,11 @@ namespace LearnSmartManufacturing.ViewModels
 
     public record SensorPreset(string Name, double Width);
 
-    public partial class LensFocalLengthViewModel : ObservableObject
+    public partial class LensViewModel : ObservableObject
     {
         private static readonly double[] StandardFocalLengths = [6, 8, 12, 16, 25, 35, 50, 75, 100];
 
-        public LensFocalLengthViewModel()
+        public LensViewModel()
         {
             Presets =
             [
@@ -33,7 +33,7 @@ namespace LearnSmartManufacturing.ViewModels
             SelectedSensorPreset = SensorPresets[2];
         }
 
-        public string Heading => "镜头焦距";
+        public string Heading => "镜头";
 
         // 2/3" sensor width (mm)
         public double SensorWidth => 8.45;

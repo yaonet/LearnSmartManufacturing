@@ -34,7 +34,7 @@ namespace LearnSmartManufacturing.Tests.ViewModels
                 Assert.True(visionGroup.IsExpanded);
                 Assert.Equal(1, syncContext.PostCount);
                 Assert.True(visionGroup.Children[0].IsSelected);
-                Assert.Equal(typeof(IndustrialCameraViewModel), nav.History[^1]);
+                Assert.Equal(typeof(CameraViewModel), nav.History[^1]);
             }
             finally
             {
@@ -59,6 +59,21 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             motion.IsSelected = true;
             Assert.False(settings.IsSelected);
             Assert.Equal(typeof(MotionControlViewModel), nav.History[^1]);
+        }
+
+        [Fact]
+        public void MachineVisionGroup_ContainsFourConciseSubpagesAndNavigatesCorrectly()
+        {
+            var nav = new RecordingNavigationService();
+            var vm = new MainWindowViewModel(nav);
+
+            var visionGroup = vm.NavigationItems.First(i => i.Title == "机器视觉");
+            Assert.Equal(["相机", "镜头", "光源", "仿真"], visionGroup.Children.Select(c => c.Title).ToArray());
+
+            var lightingItem = visionGroup.Children.Single(c => c.Title == "光源");
+            lightingItem.IsSelected = true;
+
+            Assert.Equal(typeof(LightingViewModel), nav.History[^1]);
         }
 
         private sealed class RecordingNavigationService : ObservableObject, INavigationService
