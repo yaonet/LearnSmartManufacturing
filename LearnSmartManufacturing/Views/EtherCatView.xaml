@@ -4,8 +4,786 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:ecat="clr-namespace:LearnSmartManufacturing.Models.EtherCat"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:EtherCatViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+        <SolidColorBrush x:Key="LedOffBrush" Color="#6C7086" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="SmallActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="LedDot" TargetType="Ellipse">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Fill" Value="{StaticResource LedOffBrush}" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,4" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1" Margin="0,0,8,0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding ActiveFaultBadgeText, Mode=OneWay}" FontSize="11.5" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasActiveFault}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding MasterStateBadgeText, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" FontWeight="Bold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding MasterState}" Value="{x:Static ecat:EsmState.PreOp}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding MasterState}" Value="{x:Static ecat:EsmState.SafeOp}">
+                                        <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding MasterState}" Value="{x:Static ecat:EsmState.Op}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasActiveFault}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="EtherCAT 实时工业以太网工作台 · ESM 状态机、PDO/SDO 与分布式时钟" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding StatusBanner, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Shared Master Control Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,8" Margin="0,0,0,8">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="同步周期:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                <ComboBox Width="146" Margin="0,0,8,0"
+                          ItemsSource="{Binding CycleOptions}" SelectedItem="{Binding SelectedCycleOption}"
+                          DisplayMemberPath="Name" AutomationProperties.Name="EtherCAT同步周期" />
+
+                <Button Content="{Binding CyclicButtonText, Mode=OneWay}" Command="{Binding ToggleCyclicCommand}" Margin="0,0,8,0" />
+                <Button Content="单步周期 (Step)" Command="{Binding StepCycleCommand}" Margin="0,0,8,0" />
+                <Button Content="一键上线 (Boot → OP)" Command="{Binding BootToOpCommand}" Margin="0,0,8,0" />
+                <Button Content="故障复位" Command="{Binding ClearFaultsCommand}" Margin="0,0,12,0" />
+
+                <CheckBox Content="DC 分布式时钟锁相" IsChecked="{Binding DcEnabled}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <CheckBox Content="模拟主站 OS 抖动" IsChecked="{Binding SimulateOsJitter}" VerticalAlignment="Center" />
+            </WrapPanel>
+        </Border>
+
+        <!-- Main Tabs -->
+        <TabControl Grid.Row="2">
+            <!-- Tab 1: Ring Topology, ESM State Machine & Real-Time PDO Process Image -->
+            <TabItem Header="总线拓扑、ESM 状态机 &amp; PDO 过程映像">
+                <Grid Margin="4,10,4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Logical Ring Topology + 0x88A4 LRW Frame Dissector Canvas -->
+                    <Border Grid.Row="0" Height="156" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource CanvasBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <controls:EtherCatTopologyCanvas
+                            Slaves="{Binding SlaveSnapshots, Mode=OneWay}"
+                            LatestFrame="{Binding LatestFrame, Mode=OneWay}"
+                            MasterState="{Binding MasterState, Mode=OneWay}"
+                            ActiveFault="{Binding ActiveFault, Mode=OneWay}"
+                            FramePulsePhase="{Binding FramePulsePhase, Mode=OneWay}" />
+                    </Border>
+
+                    <!-- Left Controls + Right KPI, PDO Image & Logs -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="346" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Scrollable Controls -->
+                        <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <TextBlock Text="ESM 主站状态机 (ETG.1000 严格切换校验)" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="4" Margin="0,0,0,8">
+                                        <Button Content="INIT" Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                                Command="{Binding RequestEsmStateCommand}" CommandParameter="Init" />
+                                        <Button Content="PRE-OP" Style="{StaticResource SmallActionButton}" Margin="2,0,2,0"
+                                                Command="{Binding RequestEsmStateCommand}" CommandParameter="PreOp" />
+                                        <Button Content="SAFE-OP" Style="{StaticResource SmallActionButton}" Margin="2,0,2,0"
+                                                Command="{Binding RequestEsmStateCommand}" CommandParameter="SafeOp" />
+                                        <Button Content="OP" Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                                Command="{Binding RequestEsmStateCommand}" CommandParameter="Op" />
+                                    </UniformGrid>
+
+                                    <!-- ESM Permission Indicators -->
+                                    <Border CornerRadius="6" Padding="8,6" Margin="0,0,0,6"
+                                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <UniformGrid Columns="3">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMailboxAllowed}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="邮箱 SDO" FontSize="11" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsInputsActive}" Value="True">
+                                                                    <Setter Property="Fill" Value="{StaticResource CyanMetricBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="输入 TxPDO" FontSize="11" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsOutputsActive}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="输出 RxPDO" FontSize="11" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </Border>
+                                    <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,2"
+                                               Text="注：从 INIT 直接点 OP 将触发 ETG.1000 AL 0x0011 拒绝；切至 SAFE-OP 可演示“能读输入反馈、不驱动电机输出”。" />
+
+                                    <Separator Margin="0,10" />
+
+                                    <TextBlock Text="CiA 402 伺服驱动 &amp; 数字量 RxPDO 控制" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="2" Margin="0,0,0,8">
+                                        <Button Content="402 使能 (0x06→0x0F)" Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                                Command="{Binding EnableServosCommand}" />
+                                        <Button Content="下使能 (0x0000)" Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                                Command="{Binding DisableServosCommand}" />
+                                    </UniformGrid>
+
+                                    <CheckBox Content="CSP 双轴正弦同步轨迹 (X=sin, Y=cos)"
+                                              IsChecked="{Binding CspSineTrajectoryEnabled}" Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="X:" VerticalAlignment="Center" Margin="0,0,3,0" Style="{StaticResource MetricLabel}" />
+                                        <TextBox Grid.Column="1" Text="{Binding ManualTargetXText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                        <TextBlock Grid.Column="3" Text="Y:" VerticalAlignment="Center" Margin="0,0,3,0" Style="{StaticResource MetricLabel}" />
+                                        <TextBox Grid.Column="4" Text="{Binding ManualTargetYText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                        <Button Grid.Column="6" Content="下发" Style="{StaticResource SmallActionButton}"
+                                                Command="{Binding ApplyManualTargetsCommand}" />
+                                    </Grid>
+
+                                    <TextBlock Text="EL2809 数字量输出 (DO.0 闭环反馈至 DI.3)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
+                                    <UniformGrid Columns="4" Margin="0,0,0,2">
+                                        <Button Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                                Command="{Binding ToggleDoBitCommand}" CommandParameter="0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DoBit0}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="DO.0" FontFamily="Consolas" FontSize="10.5" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SmallActionButton}" Margin="2,0,2,0"
+                                                Command="{Binding ToggleDoBitCommand}" CommandParameter="1">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DoBit1}" Value="True">
+                                                                    <Setter Property="Fill" Value="{StaticResource CyanMetricBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="DO.1" FontFamily="Consolas" FontSize="10.5" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SmallActionButton}" Margin="2,0,2,0"
+                                                Command="{Binding ToggleDoBitCommand}" CommandParameter="2">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DoBit2}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="DO.2" FontFamily="Consolas" FontSize="10.5" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                                Command="{Binding ToggleDoBitCommand}" CommandParameter="3">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse>
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DoBit3}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Text="DO.3" FontFamily="Consolas" FontSize="10.5" />
+                                            </StackPanel>
+                                        </Button>
+                                    </UniformGrid>
+
+                                    <Separator Margin="0,10" />
+
+                                    <TextBlock Text="工业现场总线故障注入" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="2">
+                                        <Button Content="Slave 2 断链 (级联)" Style="{StaticResource SmallActionButton}" Margin="0,0,4,4"
+                                                Command="{Binding InjectFaultCommand}" CommandParameter="CableBreakAtSlave2" />
+                                        <Button Content="SM 看门狗 (0x001B)" Style="{StaticResource SmallActionButton}" Margin="4,0,0,4"
+                                                Command="{Binding InjectFaultCommand}" CommandParameter="SmWatchdogTimeout" />
+                                        <Button Content="DC 失步 (0x002D)" Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                                Command="{Binding InjectFaultCommand}" CommandParameter="DcSyncLost" />
+                                        <Button Content="清除并复位故障" Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                                Command="{Binding ClearFaultsCommand}" />
+                                    </UniformGrid>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Right KPI + Slave PDO Table + Diagnostic Log -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="132" />
+                            </Grid.RowDefinitions>
+
+                            <!-- KPI Cards -->
+                            <UniformGrid Grid.Row="0" Columns="4">
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="当前 ESM 状态" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding MasterStateText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource CyanMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="LRW WKC (实 / 期)" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding WkcSummaryText, Mode=OneWay}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CompactMetricValue}">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsWkcValid}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="帧往返耗时 / 错帧" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource PurpleMetricBrush}">
+                                            <Run Text="{Binding FrameLatencyText, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="DC 最大同步偏差" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding MaxDcOffsetText, Mode=OneWay}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CompactMetricValue}">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDcWithinSpec}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- Real-Time Slave FMMU PDO Process Image Table -->
+                            <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <TextBlock DockPanel.Dock="Right" FontFamily="Consolas" FontSize="10.5"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center">
+                                            <Run Text="Cycle #" /><Run Text="{Binding CycleCount, Mode=OneWay}" />
+                                            <Run Text=" · WKC 异常 " /><Run Text="{Binding WkcErrorCount, Mode=OneWay}" />
+                                        </TextBlock>
+                                        <TextBlock Text="从站 FMMU 过程映像监视表 (PDO · CiA 402 · WKC)" Style="{StaticResource SectionTitle}" Margin="0" />
+                                    </DockPanel>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding SlaveSnapshots}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type ecat:EtherCatSlaveSnapshot}">
+                                                <Border Padding="9,6" Margin="0,1.5" CornerRadius="5"
+                                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                    <StackPanel>
+                                                        <DockPanel Margin="0,0,0,3">
+                                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding PdoMappingSummary, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,10,0" />
+                                                                <TextBlock FontFamily="Consolas" FontSize="10.5" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource PurpleMetricBrush}" Margin="0,0,10,0">
+                                                                    <Run Text="WKC " /><Run Text="{Binding WkcTag, Mode=OneWay}" />
+                                                                </TextBlock>
+                                                                <TextBlock Text="{Binding DcOffsetText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                            </StackPanel>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding AddressHex, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                                                                           Foreground="{StaticResource CyanMetricBrush}" Margin="0,0,6,0" />
+                                                                <TextBlock Text="{Binding Name, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" FontWeight="SemiBold"
+                                                                           Margin="0,0,8,0" />
+                                                                <TextBlock Text="{Binding StateTag, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding State}" Value="{x:Static ecat:EsmState.Init}">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding State}" Value="{x:Static ecat:EsmState.PreOp}">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding State}" Value="{x:Static ecat:EsmState.SafeOp}">
+                                                                                    <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding ProcessValueSummary, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Master Diagnostic Log -->
+                            <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearLogsCommand}" Padding="8,1" FontSize="11" />
+                                        <TextBlock Text="EtherCAT 主站协议与故障诊断日志" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding DiagnosticLogs}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type ecat:EtherCatLogEntry}">
+                                                <TextBlock FontFamily="Consolas" FontSize="10.5" TextWrapping="Wrap">
+                                                    <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <Run Text="  [" />
+                                                    <Run Text="{Binding Tag, Mode=OneWay}" FontWeight="Bold">
+                                                        <Run.Style>
+                                                            <Style TargetType="Run">
+                                                                <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Level}" Value="Warn">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Run.Style>
+                                                    </Run>
+                                                    <Run Text="]  " />
+                                                    <Run Text="{Binding Message, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: CoE Object Dictionary (SDO Mailbox) & Distributed Clocks (DC) Oscilloscope -->
+            <TabItem Header="CoE 对象字典 (SDO) &amp; 分布式时钟 (DC) 示波">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.06*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.94*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: CoE SDO Object Dictionary Lab -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="16,12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                                <Border DockPanel.Dock="Right" CornerRadius="8" Padding="8,3" BorderThickness="1"
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="INIT 态 · CoE 邮箱禁用" />
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsMailboxAllowed}" Value="True">
+                                                        <Setter Property="Text" Value="CoE SDO 邮箱已就绪" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                                <TextBlock Text="CoE (CANopen over EtherCAT) 对象字典 &amp; SDO 实验室"
+                                           Style="{StaticResource SectionTitle}" FontSize="15" Margin="0" VerticalAlignment="Center" />
+                            </DockPanel>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="目标伺服从站:" VerticalAlignment="Center" Margin="0,0,8,0" Style="{StaticResource MetricLabel}" />
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding ServoSlaveOptions}" SelectedItem="{Binding SelectedSdoSlave}"
+                                          DisplayMemberPath="Name" AutomationProperties.Name="SDO目标从站" />
+                            </Grid>
+
+                            <ListBox Grid.Row="2" ItemsSource="{Binding SdoEntries}" SelectedItem="{Binding SelectedSdoEntry}"
+                                     Style="{StaticResource DarkSafeListBox}" Margin="0,0,0,8">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type ecat:SdoEntry}">
+                                        <Border Padding="8,5" Margin="0,1" CornerRadius="5"
+                                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="74" />
+                                                    <ColumnDefinition Width="1.2*" />
+                                                    <ColumnDefinition Width="34" />
+                                                    <ColumnDefinition Width="62" />
+                                                    <ColumnDefinition Width="0.95*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding IndexText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                                                           Foreground="{StaticResource CyanMetricBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Name, Mode=OneWay}" FontSize="11"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Access, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"
+                                                           VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsWritable}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource PurpleMetricBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="3" Text="{Binding DataType, Mode=OneWay}" FontFamily="Consolas" FontSize="10"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="4" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                                           TextAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding ValueText, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Unit, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- SDO Upload / Download Input Strip -->
+                            <Grid Grid.Row="3" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="6" />
+                                    <ColumnDefinition Width="54" />
+                                    <ColumnDefinition Width="6" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="6" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="6" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding SdoIndexText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                         AutomationProperties.Name="SDO索引" />
+                                <TextBox Grid.Column="2" Text="{Binding SdoSubIndexText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                         AutomationProperties.Name="SDO子索引" />
+                                <TextBox Grid.Column="4" Text="{Binding SdoWriteValueText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                         AutomationProperties.Name="SDO写入值" />
+                                <Button Grid.Column="6" Content="Upload (读)" Style="{StaticResource SmallActionButton}" Command="{Binding ReadSdoCommand}" />
+                                <Button Grid.Column="8" Content="Download (写)" Style="{StaticResource SmallActionButton}" Command="{Binding WriteSdoCommand}" />
+                            </Grid>
+
+                            <!-- Quick Abort Code Demo Strip -->
+                            <WrapPanel Grid.Row="4" Margin="0,0,0,6">
+                                <Button Content="写只读对象 (0x06010002)" Style="{StaticResource SmallActionButton}" Margin="0,0,6,4"
+                                        Command="{Binding DemoSdoAbortCommand}" CommandParameter="ReadOnly" />
+                                <Button Content="读不存在索引 (0x06020000)" Style="{StaticResource SmallActionButton}" Margin="0,0,6,4"
+                                        Command="{Binding DemoSdoAbortCommand}" CommandParameter="NotFound" />
+                                <Button Content="写越界模式 (0x06090030)" Style="{StaticResource SmallActionButton}" Margin="0,0,0,4"
+                                        Command="{Binding DemoSdoAbortCommand}" CommandParameter="OutOfRange" />
+                            </WrapPanel>
+
+                            <TextBlock Grid.Row="5" Text="{Binding LastSdoBanner, Mode=OneWay}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLastSdoSuccess}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: Distributed Clocks (DC) Oscilloscope & Propagation Delay Table -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- DC Jitter Oscilloscope Card -->
+                        <Border Grid.Row="0" Style="{StaticResource CompactCardStyle}" Padding="14,12">
+                            <StackPanel>
+                                <Border Height="190" CornerRadius="8" ClipToBounds="True" Margin="0,0,0,10"
+                                        Background="{StaticResource CanvasBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <controls:DcJitterCanvas
+                                        Samples="{Binding DcJitterSamples, Mode=OneWay}"
+                                        DcEnabled="{Binding DcEnabled, Mode=OneWay}" />
+                                </Border>
+
+                                <WrapPanel VerticalAlignment="Center">
+                                    <CheckBox Content="DC 硬件 PI 锁相" IsChecked="{Binding DcEnabled}" Margin="0,0,12,4" />
+                                    <CheckBox Content="主站 OS 抖动" IsChecked="{Binding SimulateOsJitter}" Margin="0,0,12,4" />
+                                    <Button Content="{Binding CyclicButtonText, Mode=OneWay}" Style="{StaticResource SmallActionButton}"
+                                            Command="{Binding ToggleCyclicCommand}" Margin="0,0,6,4" />
+                                    <Button Content="单步采样" Style="{StaticResource SmallActionButton}"
+                                            Command="{Binding StepCycleCommand}" Margin="0,0,0,4" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Per-Slave DC Propagation Delay & Architecture Card -->
+                        <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="14,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="从站传播延迟 (0x0928) 与同步偏差实测表" Style="{StaticResource SectionTitle}" FontSize="14.5" />
+
+                                <Grid Grid.Row="1" Margin="6,0,6,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="58" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="74" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="站址" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="1" Text="从站节点" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="2" Text="传播延迟" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="3" Text="实时 SYNC0 偏移" Style="{StaticResource MetricLabel}" TextAlignment="Right" />
+                                </Grid>
+
+                                <ItemsControl Grid.Row="2" ItemsSource="{Binding SlaveSnapshots}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type ecat:EtherCatSlaveSnapshot}">
+                                            <Border Padding="6,5" Margin="0,2" CornerRadius="5"
+                                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="1.1*" />
+                                                        <ColumnDefinition Width="74" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding AddressHex, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{StaticResource CyanMetricBrush}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding DelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{StaticResource PurpleMetricBrush}" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding DcOffsetText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"
+                                                               TextAlignment="Right">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsOnline}" Value="False">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <TextBlock Grid.Row="3" Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                           Text="面试考点：DC 三步校准 —— ① BWR 硬件端口时间戳测算各节点线缆传播延迟 (0x0928)；② 写入系统时间偏移 (0x0920)；③ 每周期 ARMW (0x0910) 由从站 ESC 硬件 PI 环补偿晶振漂移，从而不受上位机 OS 抖动影响，实现 &lt; 100 ns 多轴同步。" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>

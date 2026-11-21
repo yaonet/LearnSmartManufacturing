@@ -14,7 +14,7 @@
 | WPF | MVVM | 已完成 | 零业务 Code-Behind：`ObservableValidator` 跨属性校验、`AsyncRelayCommand` 防重入/取消、`WeakReferenceMessenger` 双向解耦与数据流追踪 |
 | 协议 | Modbus | 已完成 | 手写 Modbus TCP (MBAP) / RTU (CRC-16) 编解码、帧解剖画布、ABCD/CDAB/DCBA/BADC 字节序、内置模拟 PLC 轮询与真实 Socket 客户端 |
 | 协议 | MQTT | 已完成 | MQTT 3.1.1 二进制编解码、QoS 0/1/2 握手时序画布（含丢包/DUP 重传）、ISA-95 通配符演练场、Retain/LWT、断网续传与真实 TCP 客户端 |
-| 协议 | EtherCAT | 规划中 | 占位页面 |
+| 协议 | EtherCAT | 已完成 | EtherCAT 0x88A4 LRW 帧编解码、飞速处理环网与 WKC 校验、ETG.1000 ESM 状态机、CiA 402 伺服 PDO、CoE SDO 邮箱与分布式时钟 (DC) 纳秒抖动示波 |
 | 运动控制 | 运动控制 | 已完成 | 单轴 HAL + PLCopen 状态机 + T/S 7 段规划示波；XY 双轴 PTP/G01/G02/G03 插补、示教配方与 PSO 飞拍 |
 
 ## 技术栈
