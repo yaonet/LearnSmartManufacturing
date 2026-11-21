@@ -4,228 +4,580 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:vision="clr-namespace:LearnSmartManufacturing.Models.Vision"
              xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:LensViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="760">
+             d:DesignHeight="800" d:DesignWidth="1160">
     <UserControl.Resources>
-        <Style x:Key="SectionCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
-            <Setter Property="Margin" Value="0,0,0,16" />
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="19" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="CompactSliderBadge" TargetType="TextBlock" BasedOn="{StaticResource SliderBadge}">
+            <Setter Property="Width" Value="72" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="PresetChipButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="Margin" Value="0,0,6,4" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,3.5" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" MaxWidth="900">
-            <!-- Header and live metrics -->
-            <Border Style="{StaticResource SectionCardStyle}">
-                <StackPanel>
-                    <TextBlock Text="镜头焦距与视场角 (FOV) 相似三角形光路" FontSize="20" FontWeight="SemiBold" />
-                    <TextBlock Margin="0,4,0,16" TextWrapping="Wrap"
-                               Text="固定 2/3″ 传感器靶面宽度 Ws = 8.45 mm，观察焦距 f 变化对主光线夹角 θ 与实际视野 FOV 的几何约束"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                    <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
-                            CornerRadius="8" Padding="20,16">
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1" Margin="0,0,8,0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding LensCategory, Mode=OneWay}" FontSize="11.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource CyanMetricBrush}" />
+                </Border>
+                <Button Content="恢复默认" Command="{Binding ResetDefaultsCommand}" Padding="10,4" FontSize="11.5" />
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="机器视觉 · 工业镜头光路、远心透视误差与畸变/接口实验室" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ActiveScenarioHint, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Shared Scenario Presets Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,7" Margin="0,0,0,8">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="典型镜头场景：" VerticalAlignment="Center" Margin="0,0,8,0"
+                           Style="{StaticResource MetricLabel}" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding ScenarioPresets}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vision:LensScenarioPreset}">
+                            <Button Style="{StaticResource PresetChipButton}"
+                                    Command="{Binding DataContext.ApplyScenarioPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <TextBlock>
+                                    <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" />
+                                    <Run Text=" · " Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <Run Text="{Binding Tag, Mode=OneWay}" Foreground="{StaticResource CyanMetricBrush}" />
+                                </TextBlock>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Tabs -->
+        <TabControl Grid.Row="2">
+            <!-- Tab 1: Similar-Triangle Optical Path, Focal-Length Solver, Extension Tube & Standard Lens Catalog -->
+            <TabItem Header="焦距光路、选型反推 &amp; 近摄接圈">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="346" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Scrollable Calculator & Controls Panel -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="光路交互控制（支持选中右侧图后方向键微调）" Style="{StaticResource SectionTitle}" />
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}"
+                                               Text="{Binding FocalLength, StringFormat='{}{0:F0} mm'}" />
+                                    <TextBlock Text="镜头焦距 f" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="{Binding MinFocalLength, Mode=OneWay}" Maximum="{Binding MaxFocalLength, Mode=OneWay}"
+                                        Value="{Binding FocalLength}" TickFrequency="1" IsSnapToTickEnabled="True"
+                                        Margin="0,2,0,6" AutomationProperties.Name="镜头焦距 f (毫米)" />
+
+                                <ListBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}" DisplayMemberPath="Name"
+                                         Background="Transparent" BorderThickness="0" Margin="0,0,0,8"
+                                         Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="4" />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="2,3" />
+                                            <Setter Property="FontSize" Value="10.5" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}"
+                                               Text="{Binding WorkingDistance, StringFormat='{}{0:F0} mm'}" />
+                                    <TextBlock Text="工作距离 WD" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="{Binding MinWorkingDistance, Mode=OneWay}" Maximum="{Binding MaxWorkingDistance, Mode=OneWay}"
+                                        Value="{Binding WorkingDistance}" TickFrequency="10" IsSnapToTickEnabled="True"
+                                        Margin="0,2,0,8" AutomationProperties.Name="工作距离 WD (毫米)" />
+
+                                <Separator Margin="0,4,0,10" />
+
+                                <!-- Focal Length Reverse Solver -->
+                                <DockPanel Margin="0,0,0,6">
+                                    <Button DockPanel.Dock="Right" Content="同步到光路" Style="{StaticResource PresetChipButton}" Margin="0"
+                                            Command="{Binding ApplySolvedFocalToDiagramCommand}" />
+                                    <TextBlock Text="焦距反推计算器 (f = Ws·WD/FOV)" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="WD (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                        <TextBox Text="{Binding WorkingDistanceText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="FOV (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                        <TextBox Text="{Binding FovWidthText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Ws (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                        <TextBox Text="{Binding SensorWidthText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <ComboBox ItemsSource="{Binding SensorPresets}" SelectedItem="{Binding SelectedSensorPreset}"
+                                          DisplayMemberPath="Name" Margin="0,0,0,8" AutomationProperties.Name="常用传感器尺寸" />
+
+                                <Border CornerRadius="6" Padding="10,7" Margin="0,0,0,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding ResultText, Mode=OneWay}" FontFamily="Consolas"
+                                                       FontSize="15" FontWeight="Bold" Foreground="{StaticResource CyanMetricBrush}" />
+                                            <TextBlock Text="所需理论焦距 f" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding Substitution, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,3,0,3" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding NearestStandardText, Mode=OneWay}" FontSize="11"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Hint, Mode=OneWay}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" FontSize="11">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasResult}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <Separator Margin="0,4,0,10" />
+
+                                <!-- Macro Extension Tube Calculator -->
+                                <TextBlock Text="微距延长接圈计算 (当 WD &lt; 最近对焦距 MOD)" Style="{StaticResource SectionTitle}" />
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding MacroWdText, Mode=OneWay}" />
+                                    <TextBlock Text="期望近摄物距 WD" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="30" Maximum="180" Value="{Binding MacroTargetWdMm}" TickFrequency="5" IsSnapToTickEnabled="True" Margin="0,2,0,6" />
+                                <Border CornerRadius="6" Padding="10,7"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <UniformGrid Columns="2" Margin="0,0,0,4">
+                                            <StackPanel>
+                                                <TextBlock Text="所需接圈厚度 Δv" Style="{StaticResource MetricLabel}" />
+                                                <TextBlock Text="{Binding ExtensionThicknessText, Mode=OneWay}" FontFamily="Consolas" FontSize="14" FontWeight="Bold"
+                                                           Foreground="{StaticResource PurpleMetricBrush}" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <TextBlock Text="有效光圈 (F4.0→)" Style="{StaticResource MetricLabel}" />
+                                                <TextBlock Text="{Binding ExtensionEffFText, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                        <TextBlock Text="{Binding ExtensionTubeResult.Summary, Mode=OneWay}" FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right KPI Cards + OpticsDiagram + 9-Focal Standard Lens Catalog -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="1.15*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="0.85*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- 4 KPI Cards -->
+                        <UniformGrid Grid.Row="0" Columns="4">
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="实际视野宽度 FOV" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource CyanMetricBrush}">
+                                        <Run Text="{Binding FovWidth, Mode=OneWay, StringFormat=F1}" /><Run Text=" mm" FontSize="12" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="水平视场角 θ" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorSuccessBrush}">
+                                        <Run Text="{Binding FovAngleDeg, Mode=OneWay, StringFormat=F1}" /><Run Text=" °" FontSize="12" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="光学放大倍率 β" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource PurpleMetricBrush}">
+                                        <Run Text="{Binding Magnification, Mode=OneWay, StringFormat=F3}" /><Run Text=" ×" FontSize="12" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="相似比 (WD / f)" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorCautionBrush}">
+                                        <Run Text="{Binding SimilarityRatio, Mode=OneWay, StringFormat=F1}" /><Run Text=" : 1" FontSize="12" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Animated Similar-Triangle Optical Path -->
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True"
+                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:OpticsDiagram x:Name="Diagram"
+                                                    Focusable="True"
+                                                    FocalLength="{Binding FocalLength}"
+                                                    WorkingDistance="{Binding WorkingDistance}"
+                                                    SensorWidth="{Binding SensorWidth, Mode=OneWay}"
+                                                    KeyDown="Diagram_KeyDown"
+                                                    MouseDown="Diagram_MouseDown" />
+                        </Border>
+
+                        <!-- Standard Fixed-Focal Industrial Lens Catalog -->
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Grid.Row="0" Margin="0,0,0,4">
+                                    <TextBlock DockPanel.Dock="Right" Text="★ 绿色高亮为当前反推最接近标准定焦"
+                                               Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                    <TextBlock Text="工业常用定焦焦段视野与典型畸变对照表 (6 ~ 100 mm)" Style="{StaticResource SectionTitle}" Margin="0" />
+                                </DockPanel>
+
+                                <Grid Grid.Row="1" Margin="6,0,6,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="68" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="标称焦距" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="1" Text="焦段分类" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="2" Text="当前 WD 视野" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="3" Text="水平视场角" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="4" Text="典型 TV 畸变" Style="{StaticResource MetricLabel}" TextAlignment="Right" />
+                                </Grid>
+
+                                <ListBox Grid.Row="2" ItemsSource="{Binding LensCatalogRows}" Style="{StaticResource DarkSafeListBox}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vision:LensCatalogRow}">
+                                            <Border Padding="6,3.5" Margin="0,1" CornerRadius="4">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="Transparent" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsNearestRecommended}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                <Setter Property="BorderThickness" Value="1" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="68" />
+                                                        <ColumnDefinition Width="1.1*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding FocalText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsNearestRecommended}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Category, Mode=OneWay}" FontSize="11" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding FovText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding AngleText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding DistortionText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{StaticResource PurpleMetricBrush}" TextAlignment="Right" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: Telecentric vs FA Perspective Lab, Radial Distortion Simulator & C/CS/F/M42 Mount Checker -->
+            <TabItem Header="远心透视对比、光学畸变 &amp; 法兰接口匹配">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.04*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.96*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: FA vs Telecentric Lens Perspective Error Lab -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="14,12">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="220" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="实际视野宽度 (FOV)" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Style="{StaticResource MetricValue}">
-                                    <Run Text="{Binding FovWidth, Mode=OneWay, StringFormat=F1}" /><Run Text=" mm" FontSize="14" />
-                                </TextBlock>
-                                <TextBlock Text="FOV = Ws · WD / f" Style="{StaticResource MetricLabel}" FontFamily="Consolas" />
+                            <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                                <TextBlock Text="普通 FA 镜头 vs 物方远心镜头（透视误差仿真）" Style="{StaticResource SectionTitle}" FontSize="15" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                           Text="精密尺寸测量中，若工件存在高度波动 ΔZ：普通定焦镜头因中心透视产生 ε ≈ ΔZ/WD 巨大误差，而远心镜头平行主光线使放大倍率几乎恒定。" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="水平视场角 (θ)" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Style="{StaticResource MetricValue}">
-                                    <Run Text="{Binding FovAngleDeg, Mode=OneWay, StringFormat=F1}" /><Run Text=" °" FontSize="14" />
-                                </TextBlock>
-                                <TextBlock Text="θ = 2 · arctan(Ws / 2f)" Style="{StaticResource MetricLabel}" FontFamily="Consolas" />
+                            <Border Grid.Row="1" CornerRadius="8" ClipToBounds="True" Margin="0,0,0,10"
+                                    Background="{StaticResource CanvasBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                <controls:TelecentricCompareCanvas Result="{Binding TelecentricResult, Mode=OneWay}" />
+                            </Border>
+
+                            <StackPanel Grid.Row="2" Margin="0,0,0,8">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding TeleDeltaZText, Mode=OneWay}" />
+                                    <TextBlock Text="工件高度波动 ΔZ（正值=靠近镜头）" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="-20" Maximum="20" Value="{Binding TeleDeltaZMm}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <UniformGrid Columns="2">
+                                    <StackPanel Margin="0,0,8,0">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding TeleDiameterText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                            <TextBlock Text="标称工件外径 D" Style="{StaticResource MetricLabel}" />
+                                        </DockPanel>
+                                        <Slider Minimum="10" Maximum="100" Value="{Binding TeleNominalDiameterMm}" TickFrequency="5" IsSnapToTickEnabled="True" />
+                                    </StackPanel>
+                                    <StackPanel Margin="8,0,0,0">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding TeleWdText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                            <TextBlock Text="标定工作距离 WD" Style="{StaticResource MetricLabel}" />
+                                        </DockPanel>
+                                        <Slider Minimum="100" Maximum="400" Value="{Binding TeleWorkingDistanceMm}" TickFrequency="10" IsSnapToTickEnabled="True" />
+                                    </StackPanel>
+                                </UniformGrid>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="光学放大倍率 (β)" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Style="{StaticResource MetricValue}">
-                                    <Run Text="{Binding Magnification, Mode=OneWay, StringFormat=F3}" /><Run Text=" ×" FontSize="14" />
-                                </TextBlock>
-                                <TextBlock Text="β = f / WD = Ws / FOV" Style="{StaticResource MetricLabel}" FontFamily="Consolas" />
-                            </StackPanel>
+                            <Border Grid.Row="3" CornerRadius="6" Padding="10,8"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <StackPanel>
+                                    <UniformGrid Columns="2" Margin="0,0,0,6">
+                                        <StackPanel>
+                                            <TextBlock Text="普通 FA 镜头实测值 (公差 ±0.2mm)" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding FaErrorSummaryText, Mode=OneWay}" FontFamily="Consolas" FontSize="14" FontWeight="Bold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding TelecentricResult.FaWithinTolerance}" Value="True">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="远心镜头实测值 (远心度 0.08°)" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding TcErrorSummaryText, Mode=OneWay}" FontFamily="Consolas" FontSize="14" FontWeight="Bold"
+                                                       Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <TextBlock Text="{Binding TelecentricResult.Summary, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </Border>
-                </StackPanel>
-            </Border>
 
-            <!-- Optical path -->
-            <Border Style="{StaticResource SectionCardStyle}">
-                <StackPanel>
-                    <DockPanel Margin="4,0,4,12" LastChildFill="False">
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding LensCategory}" FontSize="12"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                            <StackPanel.Resources>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Width" Value="10" />
-                                    <Setter Property="Height" Value="10" />
-                                    <Setter Property="Margin" Value="0,0,6,0" />
-                                    <Setter Property="VerticalAlignment" Value="Center" />
-                                </Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontSize" Value="12" />
-                                    <Setter Property="Margin" Value="0,0,16,0" />
-                                    <Setter Property="VerticalAlignment" Value="Center" />
-                                </Style>
-                            </StackPanel.Resources>
-                            <Ellipse Fill="#2575FC" />
-                            <TextBlock Text="主光线与被测视野 (FOV)" />
-                            <Ellipse Fill="#2B9A57" />
-                            <TextBlock Text="传感器像方平面 (Ws = 8.45 mm)" />
-                            <Ellipse Fill="#C9931A" />
-                            <TextBlock Text="镜头光心 O" />
-                        </StackPanel>
-                    </DockPanel>
+                    <!-- Right: Radial Distortion Simulator + C/CS/F/M42 Mount Compatibility Checker -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1.15*" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="0.85*" />
+                        </Grid.RowDefinitions>
 
-                    <Border Height="310" CornerRadius="8" ClipToBounds="True"
-                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
-                        <controls:OpticsDiagram x:Name="Diagram"
-                                                Focusable="True"
-                                                FocalLength="{Binding FocalLength}"
-                                                WorkingDistance="{Binding WorkingDistance}"
-                                                SensorWidth="{Binding SensorWidth, Mode=OneWay}"
-                                                KeyDown="Diagram_KeyDown"
-                                                MouseDown="Diagram_MouseDown" />
-                    </Border>
-                </StackPanel>
-            </Border>
+                        <!-- Radial Distortion Simulator -->
+                        <Border Grid.Row="0" Style="{StaticResource CompactCardStyle}" Padding="14,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-            <!-- Controls -->
-            <Border Style="{StaticResource SectionCardStyle}">
-                <StackPanel>
-                    <DockPanel Margin="0,0,0,8">
-                        <TextBlock DockPanel.Dock="Left" Text="镜头焦距 f (mm)" VerticalAlignment="Center" />
-                        <ListBox DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                 ItemsSource="{Binding Presets}"
-                                 SelectedItem="{Binding SelectedPreset}"
-                                 DisplayMemberPath="Name"
-                                 Background="Transparent" BorderThickness="0">
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                        </ListBox>
-                    </DockPanel>
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}"
-                                   Text="{Binding FocalLength, StringFormat=F0}" />
-                        <Slider Minimum="{Binding MinFocalLength, Mode=OneWay}"
-                                Maximum="{Binding MaxFocalLength, Mode=OneWay}"
-                                Value="{Binding FocalLength}"
-                                TickFrequency="1" IsSnapToTickEnabled="True"
-                                AutomationProperties.Name="镜头焦距 f (毫米)" />
-                    </DockPanel>
+                                <Border Grid.Row="0" MinHeight="148" CornerRadius="8" ClipToBounds="True" Margin="0,0,0,8"
+                                        Background="{StaticResource CanvasBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <controls:LensDistortionCanvas Result="{Binding DistortionResult, Mode=OneWay}" />
+                                </Border>
 
-                    <Separator Margin="0,16" />
+                                <StackPanel Grid.Row="1">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding DistortionSliderText, Mode=OneWay}" />
+                                        <TextBlock Text="径向畸变率 (负=桶形 / 正=枕形)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <Slider Minimum="-6" Maximum="6" Value="{Binding DistortionPercent}" TickFrequency="0.2" IsSnapToTickEnabled="True" Margin="0,2,0,6" />
+                                    <WrapPanel Margin="0,0,0,4">
+                                        <Button Content="广角桶形 -4%" Style="{StaticResource PresetChipButton}" Command="{Binding ApplyDistortionPresetCommand}" CommandParameter="-4.0" />
+                                        <Button Content="远心 0%" Style="{StaticResource PresetChipButton}" Command="{Binding ApplyDistortionPresetCommand}" CommandParameter="0" />
+                                        <Button Content="长焦枕形 +3%" Style="{StaticResource PresetChipButton}" Command="{Binding ApplyDistortionPresetCommand}" CommandParameter="3.0" />
+                                        <CheckBox Content="张正友标定去畸变 (Undistort)" IsChecked="{Binding ApplyUndistortCalibration}" VerticalAlignment="Center" Margin="6,0,0,4" />
+                                    </WrapPanel>
+                                </StackPanel>
 
-                    <DockPanel Margin="0,0,0,8">
-                        <TextBlock DockPanel.Dock="Left" Text="工作距离 WD (mm)" VerticalAlignment="Center" />
-                        <TextBlock DockPanel.Dock="Right" Text="默认锁定 300 mm 以便对比焦距效应" FontSize="12"
-                                   HorizontalAlignment="Right" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </DockPanel>
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}"
-                                   Text="{Binding WorkingDistance, StringFormat=F0}" />
-                        <Slider Minimum="{Binding MinWorkingDistance, Mode=OneWay}"
-                                Maximum="{Binding MaxWorkingDistance, Mode=OneWay}"
-                                Value="{Binding WorkingDistance}"
-                                TickFrequency="10" IsSnapToTickEnabled="True"
-                                AutomationProperties.Name="工作距离 WD (毫米)" />
-                    </DockPanel>
-                </StackPanel>
-            </Border>
+                                <TextBlock Grid.Row="2" Text="{Binding DistortionResult.Verdict, Mode=OneWay}" FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </Grid>
+                        </Border>
 
-            <!-- Focal length calculator -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <TextBlock Text="焦距计算器" FontSize="20" FontWeight="SemiBold" />
-                    <TextBlock Margin="0,4,0,16" TextWrapping="Wrap"
-                               Text="输入工作距离、视野宽度和传感器靶面宽度，反推所需的镜头焦距"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <!-- C / CS / F / M42 Mount Flange Distance Matcher -->
+                        <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="14,10">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="演示经典坑题 (CS镜配C机)" Style="{StaticResource PresetChipButton}" Margin="0"
+                                            Command="{Binding DemoCsLensOnCMountTrapCommand}" />
+                                    <TextBlock Text="工业镜头接口与法兰焦距匹配" Style="{StaticResource SectionTitle}" FontSize="14.5" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition />
-                        </Grid.ColumnDefinitions>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="相机机身接口" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <ComboBox ItemsSource="{Binding MountSpecs}" SelectedItem="{Binding SelectedCameraMount}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="相机机身接口" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="镜头接口" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <ComboBox ItemsSource="{Binding MountSpecs}" SelectedItem="{Binding SelectedLensMount}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="镜头接口" />
+                                    </StackPanel>
+                                </Grid>
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="工作距离 WD (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
-                            <TextBox Text="{Binding WorkingDistanceText, UpdateSourceTrigger=PropertyChanged}"
-                                     AutomationProperties.Name="计算用工作距离 WD (毫米)" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="视野宽度 FOV (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
-                            <TextBox Text="{Binding FovWidthText, UpdateSourceTrigger=PropertyChanged}"
-                                     AutomationProperties.Name="计算用视野宽度 FOV (毫米)" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="4">
-                            <TextBlock Text="传感器靶面宽度 Ws (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
-                            <TextBox Text="{Binding SensorWidthText, UpdateSourceTrigger=PropertyChanged}"
-                                     AutomationProperties.Name="计算用传感器靶面宽度 Ws (毫米)" />
-                            <ComboBox Margin="0,8,0,0"
-                                      ItemsSource="{Binding SensorPresets}"
-                                      SelectedItem="{Binding SelectedSensorPreset}"
-                                      DisplayMemberPath="Name"
-                                      AutomationProperties.Name="常用传感器尺寸" />
-                        </StackPanel>
+                                <Border CornerRadius="6" Padding="10,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding MountMatchResult.StatusBadge, Mode=OneWay}" FontFamily="Consolas" FontSize="13" FontWeight="Bold" Margin="0,0,0,4">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding MountMatchResult.IsCompatible}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding MountMatchResult.Explanation, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </Grid>
-
-                    <Border Margin="0,16,0,0" Padding="20,16" CornerRadius="8"
-                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
-                        <StackPanel>
-                            <TextBlock Text="所需镜头焦距 f" Style="{StaticResource MetricLabel}" />
-                            <TextBlock Text="{Binding ResultText}" Style="{StaticResource MetricValue}"
-                                       AutomationProperties.Name="计算得到的镜头焦距" />
-                            <TextBlock Text="{Binding Hint}" Foreground="#DE2D29" FontSize="12">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasResult}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="{Binding NearestStandardText}" FontSize="12" Margin="0,0,0,4"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-
-                            <Separator Margin="0,8" />
-
-                            <TextBlock Text="计算公式" Style="{StaticResource MetricLabel}" />
-                            <TextBlock Text="f = Ws × WD / FOV" FontFamily="Consolas" FontSize="16" Margin="0,4,0,0" />
-                            <TextBlock Text="{Binding Substitution}" FontFamily="Consolas" FontSize="16" Margin="0,2,0,0"
-                                       TextWrapping="Wrap" />
-                            <TextBlock Margin="0,8,0,0" FontSize="12" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                       Text="由相似三角形得 FOV / Ws = WD / f，变形即得 f = Ws × WD / FOV。其中 Ws 为传感器靶面宽度（与视野方向一致），WD 为工作距离，FOV 为被测视野宽度，单位均为 mm。" />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>

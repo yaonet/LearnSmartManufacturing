@@ -60,5 +60,26 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             Assert.Equal(string.Empty, vm.NearestStandardText);
             Assert.Equal("请输入大于 0 的数值", vm.Hint);
         }
+
+        [Fact]
+        public void NewEngineeringTools_ComputeCatalogMountTelecentricAndDistortionLive()
+        {
+            var vm = new LensViewModel();
+
+            Assert.Equal(9, vm.LensCatalogRows.Count);
+            Assert.Single(vm.LensCatalogRows, r => r.IsNearestRecommended && r.FocalLengthMm == 16);
+
+            // Default C lens on CS camera => compatible with 5 mm adapter ring
+            Assert.True(vm.MountMatchResult.IsCompatible);
+            Assert.True(vm.MountMatchResult.NeedsAdapter);
+
+            // Trigger classic CS lens on C camera trap
+            vm.DemoCsLensOnCMountTrapCommand.Execute(null);
+            Assert.False(vm.MountMatchResult.IsCompatible);
+
+            // Telecentric holds tolerance under ΔZ = 8 mm while FA fails
+            Assert.False(vm.TelecentricResult.FaWithinTolerance);
+            Assert.True(vm.TelecentricResult.TcWithinTolerance);
+        }
     }
 }
