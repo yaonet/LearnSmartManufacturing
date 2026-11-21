@@ -33,6 +33,9 @@
             <DataTemplate DataType="{x:Type vm:MqttViewModel}">
                 <views:MqttView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SerialTcpViewModel}">
+                <views:SerialTcpView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:CameraViewModel}">
                 <views:CameraView />
             </DataTemplate>

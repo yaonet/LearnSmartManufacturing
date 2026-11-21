@@ -77,6 +77,11 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             var calibItem = visionGroup.Children.Single(c => c.Title == "标定");
             calibItem.IsSelected = true;
             Assert.Equal(typeof(CalibrationViewModel), nav.History[^1]);
+
+            var protocolGroup = vm.NavigationItems.First(i => i.Title == "协议");
+            var serialTcpItem = protocolGroup.Children.Single(c => c.Title == "TCP/串口");
+            serialTcpItem.IsSelected = true;
+            Assert.Equal(typeof(SerialTcpViewModel), nav.History[^1]);
         }
 
         private sealed class RecordingNavigationService : ObservableObject, INavigationService

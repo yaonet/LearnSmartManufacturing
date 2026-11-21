@@ -1,0 +1,458 @@
+<UserControl x:Class="LearnSmartManufacturing.Views.SerialTcpView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:st="clr-namespace:LearnSmartManufacturing.Models.SerialTcp"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:SerialTcpViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="19" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="SmallActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,3.5" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <Border DockPanel.Dock="Right" CornerRadius="10" Padding="10,4" BorderThickness="1" VerticalAlignment="Center"
+                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                <TextBlock Text="{Binding TransportStatusBadge, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" FontWeight="SemiBold"
+                           Foreground="{StaticResource CyanMetricBrush}" />
+            </Border>
+
+            <StackPanel>
+                <TextBlock Text="TCP / 串口自定义协议工作台 · 粘包拆包状态机与 RS485 半双工" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding StatusBanner, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Shared Protocol & Transport Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,8" Margin="0,0,0,8">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="拆包协议:" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource MetricLabel}" />
+                <ComboBox Width="256" Margin="0,0,10,0"
+                          ItemsSource="{Binding ProtocolOptions}" SelectedItem="{Binding SelectedProtocol}"
+                          DisplayMemberPath="Name" AutomationProperties.Name="拆包协议选择" />
+
+                <TextBlock Text="底层通道:" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource MetricLabel}" />
+                <ComboBox Width="256" Margin="0,0,8,0"
+                          ItemsSource="{Binding TransportOptions}" SelectedItem="{Binding SelectedTransport}"
+                          DisplayMemberPath="Name" AutomationProperties.Name="底层通道模式" />
+
+                <Button Content="{Binding LoopbackToggleText, Mode=OneWay}" Command="{Binding ToggleLoopbackCommand}"
+                        Visibility="{Binding IsRealTcpMode, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0" />
+                <Button Content="清空缓存与计数" Command="{Binding ClearFramingDataCommand}" />
+            </WrapPanel>
+        </Border>
+
+        <!-- Main 2 Tabs -->
+        <TabControl Grid.Row="2">
+            <!-- Tab 1: Sticky/Half-Packet Stream Framing State Machine -->
+            <TabItem Header="TCP/串口 粘包半包拆包实验室">
+                <Grid Margin="4,10,4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 3-Stage Live Byte Pipeline Canvas -->
+                    <Border Grid.Row="0" Height="158" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource CanvasBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <controls:StreamFramingCanvas Snapshot="{Binding PipelineSnapshot, Mode=OneWay}" />
+                    </Border>
+
+                    <!-- Left Torture Controls + Right KPI, Decoded Frames & Raw Arrival Chunks -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="346" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Controls -->
+                        <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <TextBlock Text="当前帧格式规范" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="{Binding ProtocolSpecSummary, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                               Foreground="{StaticResource CyanMetricBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                                    <TextBlock Text="测试载荷内容 (Payload)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <TextBox Text="{Binding CustomPayloadText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                             Margin="0,0,0,10" AutomationProperties.Name="测试载荷文本" />
+
+                                    <TextBlock Text="字节流拆包演练（面试核心压测场景）" Style="{StaticResource SectionTitle}" />
+                                    <Button Content="① 发送正常单帧 (1 Chunk = 1 Frame)" Command="{Binding SendSingleFrameCommand}"
+                                            HorizontalAlignment="Stretch" Margin="0,0,0,6" />
+                                    <Button Content="② 演示 TCP 粘包 (3 帧合并为 1 块到达)" Command="{Binding SendStickyBurstCommand}"
+                                            HorizontalAlignment="Stretch" Margin="0,0,0,6" />
+
+                                    <Border CornerRadius="6" Padding="8,8" Margin="0,0,0,6"
+                                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <StackPanel>
+                                            <TextBlock Text="③ 分步演示半包 (1 帧拆为 3 碎片到达)" FontSize="11.5" FontWeight="SemiBold" Margin="0,0,0,6" />
+                                            <UniformGrid Columns="2">
+                                                <Button Content="发送碎片 1/3" Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                                        Command="{Binding StartHalfPacketDemoCommand}" />
+                                                <Button Content="{Binding DeliverFragmentButtonText, Mode=OneWay}" Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                                        Command="{Binding DeliverNextFragmentCommand}" />
+                                            </UniformGrid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Button Content="④ 终极混合压测 (EMI 杂波 + 粘包 + CRC错帧 + 半包)"
+                                            Command="{Binding SendChaosStressTestCommand}"
+                                            HorizontalAlignment="Stretch" Margin="0,0,0,10" />
+
+                                    <Separator Margin="0,0,0,10" />
+                                    <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                               Text="面试核心原理：TCP 与串口本质都是无边界“字节流”，绝不能假设一次 Read() 恰好等于一帧！工业标准做法是维护滑动缓存区（或 System.IO.Pipelines PipeReader），按 [同步头 → 长度/分隔符 → CRC 校验] 循环切片并保留未闭合尾片。" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Right KPI + Decoded Frames + Raw Socket Chunks -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="1.1*" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="0.9*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- KPI Strip -->
+                            <UniformGrid Grid.Row="0" Columns="4">
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="成功拆出有效帧" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ValidFrameCount, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="RxBuffer 挂起字节" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorCautionBrush}">
+                                            <Run Text="{Binding PendingBufferBytes, Mode=OneWay}" /><Run Text=" B" FontSize="12" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="CRC / 校验拦截" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding CrcErrorCount, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="丢弃 EMI 杂波字节" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource PurpleMetricBrush}">
+                                            <Run Text="{Binding GarbageBytesDiscarded, Mode=OneWay}" /><Run Text=" B" FontSize="12" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- Decoded Business Frames -->
+                            <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="业务层解包输出帧列表（已去粘包/拼合半包/校验 CRC）" Style="{StaticResource SectionTitle}" />
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding DecodedFrames}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type st:DecodedFrameRecord}">
+                                                <Border Padding="8,5" Margin="0,1" CornerRadius="5"
+                                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                    <StackPanel>
+                                                        <DockPanel Margin="0,0,0,2">
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsValid}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <TextBlock FontFamily="Consolas" FontSize="11">
+                                                                <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                                <Run Text="  #" /><Run Text="{Binding FrameId, Mode=OneWay}" Foreground="{StaticResource CyanMetricBrush}" FontWeight="Bold" />
+                                                                <Run Text="  " /><Run Text="{Binding CommandTag, Mode=OneWay}" Foreground="{StaticResource PurpleMetricBrush}" FontWeight="SemiBold" />
+                                                                <Run Text="  ·  " /><Run Text="{Binding PayloadText, Mode=OneWay}" FontWeight="SemiBold" />
+                                                            </TextBlock>
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding RawHex, Mode=OneWay}" FontFamily="Consolas" FontSize="10"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Raw Arrival Chunks Log -->
+                            <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="底层 Socket / 串口 Read() 原始到达块记录" Style="{StaticResource SectionTitle}" />
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding RawChunks}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type st:StreamChunkRecord}">
+                                                <TextBlock FontFamily="Consolas" FontSize="10.5" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <Run Text="  [#" /><Run Text="{Binding ChunkId, Mode=OneWay}" Foreground="{StaticResource CyanMetricBrush}" FontWeight="Bold" /><Run Text=" " />
+                                                    <Run Text="{Binding Label, Mode=OneWay}" Foreground="{StaticResource PurpleMetricBrush}" FontWeight="SemiBold" /><Run Text="]  " />
+                                                    <Run Text="{Binding HexText, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: RS485 Half-Duplex Bus Arbitration, Exponential Backoff Reconnect & Serial Baud Rate Calculator -->
+            <TabItem Header="RS485 半双工防冲突、心跳重连 &amp; 波特率计算">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.10*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.90*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: RS485 Bus Timeline, Mutex Lock vs Conflict & Exponential Backoff Reconnect -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="14,12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="148" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                                <TextBlock Text="RS485 半双工串行互斥调度 &amp; 心跳指数退避重连" Style="{StaticResource SectionTitle}" FontSize="15" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                           Text="RS485 两线制同一时刻仅允许 1 个节点发送；上位机必须用 SemaphoreSlim(1,1) 串行排队，并对断线实施指数退避重连（1s→2s→4s）防风暴。" />
+                            </StackPanel>
+
+                            <Border Grid.Row="1" CornerRadius="8" ClipToBounds="True" Margin="0,0,0,10"
+                                    Background="{StaticResource CanvasBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                <controls:Rs485BusCanvas
+                                    Events="{Binding Rs485BusEvents, Mode=OneWay}"
+                                    LinkState="{Binding LinkState, Mode=OneWay}"
+                                    HalfDuplexLockEnabled="{Binding HalfDuplexLockEnabled, Mode=OneWay}"
+                                    ReconnectStatusText="{Binding ReconnectStatusText, Mode=OneWay}" />
+                            </Border>
+
+                            <StackPanel Grid.Row="2" Margin="0,0,0,8">
+                                <DockPanel Margin="0,0,0,6">
+                                    <TextBlock DockPanel.Dock="Right" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                        <Run Text="成功 " /><Run Text="{Binding Rs485SuccessCount, Mode=OneWay}" Foreground="{DynamicResource SystemFillColorSuccessBrush}" FontWeight="Bold" />
+                                        <Run Text=" · 冲突 " /><Run Text="{Binding CollisionCount, Mode=OneWay}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" FontWeight="Bold" />
+                                    </TextBlock>
+                                    <CheckBox Content="开启 SemaphoreSlim(1,1) 半双工串行互斥锁" IsChecked="{Binding HalfDuplexLockEnabled}" />
+                                </DockPanel>
+
+                                <WrapPanel>
+                                    <Button Content="串行轮询 3 台从站" Style="{StaticResource SmallActionButton}" Margin="0,0,6,6"
+                                            Command="{Binding PollRs485AllDevicesCommand}" />
+                                    <Button Content="演示未加锁并发冲突" Style="{StaticResource SmallActionButton}" Margin="0,0,6,6"
+                                            Command="{Binding SimulateConcurrentConflictCommand}" />
+                                    <Button Content="模拟拔线 (心跳超时)" Style="{StaticResource SmallActionButton}" Margin="0,0,6,6"
+                                            Command="{Binding SimulateLinkDropCommand}" />
+                                    <Button Content="推进指数退避重连" Style="{StaticResource SmallActionButton}" Margin="0,0,6,6"
+                                            Command="{Binding StepBackoffReconnectCommand}" />
+                                    <Button Content="恢复连接与锁" Style="{StaticResource SmallActionButton}" Margin="0,0,0,6"
+                                            Command="{Binding RestoreLinkAndLockCommand}" />
+                                </WrapPanel>
+                            </StackPanel>
+
+                            <ListBox Grid.Row="3" ItemsSource="{Binding Rs485EventLog}" Style="{StaticResource DarkSafeListBox}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type st:Rs485BusEvent}">
+                                        <TextBlock FontFamily="Consolas" FontSize="10.5" TextWrapping="Wrap">
+                                            <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            <Run Text="  [" />
+                                            <Run Text="{Binding Direction, Mode=OneWay}" FontWeight="Bold">
+                                                <Run.Style>
+                                                    <Style TargetType="Run">
+                                                        <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Direction}" Value="RX">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Run.Style>
+                                            </Run>
+                                            <Run Text="]  " />
+                                            <Run Text="{Binding Detail, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: Serial Baud Rate, Wire Time & T3.5 Silent Delimiter Calculator -->
+                    <Border Grid.Column="2" Style="{StaticResource CompactCardStyle}" Padding="14,12">
+                        <StackPanel>
+                            <TextBlock Text="串口波特率帧耗时 &amp; T3.5 静音间隔计算器" Style="{StaticResource SectionTitle}" FontSize="15" />
+                            <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="评估串口节拍瓶颈：8N1 每字节需 10 bit（1起始+8数据+1停止），8E1 需 11 bit；Modbus RTU / RS485 依赖 3.5 字符静音时间判帧尾。" />
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="波特率 (Baud Rate)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <ComboBox ItemsSource="{Binding BaudRateOptions}" SelectedItem="{Binding SelectedBaudRate}"
+                                              DisplayMemberPath="Name" AutomationProperties.Name="波特率" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="数据位/校验/停止位" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <ComboBox ItemsSource="{Binding SerialFormatOptions}" SelectedItem="{Binding SelectedSerialFormat}"
+                                              DisplayMemberPath="Name" AutomationProperties.Name="串口帧格式" />
+                                </StackPanel>
+                            </Grid>
+
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding TxBytesText, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" />
+                                <TextBlock Text="单次请求发送字节数 (TX)" Style="{StaticResource MetricLabel}" />
+                            </DockPanel>
+                            <Slider Minimum="4" Maximum="64" Value="{Binding TxBytesCount}" TickFrequency="4" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding RxBytesText, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" />
+                                <TextBlock Text="单次应答接收字节数 (RX)" Style="{StaticResource MetricLabel}" />
+                            </DockPanel>
+                            <Slider Minimum="4" Maximum="128" Value="{Binding RxBytesCount}" TickFrequency="4" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding TurnaroundText, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" />
+                                <TextBlock Text="从站应答 + RS485 转向耗时" Style="{StaticResource MetricLabel}" />
+                            </DockPanel>
+                            <Slider Minimum="0.5" Maximum="20" Value="{Binding TurnaroundMs}" TickFrequency="0.5" IsSnapToTickEnabled="True" Margin="0,2,0,12" />
+
+                            <UniformGrid Columns="2" Margin="0,0,0,10">
+                                <Border Margin="0,0,6,6" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="单字节线传输耗时" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ByteTimeText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource CyanMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="6,0,0,6" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="收发总字节线上耗时" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding FrameTimeText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource PurpleMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,6,0" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="T3.5 判帧静音间隔" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding T35SilentText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="6,0,0,0" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="理论最高轮询频率" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding MaxPollHzText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <Border CornerRadius="6" Padding="10,8"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <TextBlock Text="{Binding SerialTiming.Summary, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap" />
+                            </Border>
+
+                            <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                       Text="工程经验：RS232 有效距离约 15 m（点对点全双工）；RS485 差分抗干扰可达 1200 m（多从站半双工，总线两端须加 120 Ω 终端电阻抑制反射）。" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>
