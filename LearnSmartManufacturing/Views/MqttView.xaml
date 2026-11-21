@@ -4,8 +4,607 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:mqtt="clr-namespace:LearnSmartManufacturing.Models.Mqtt"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:MqttViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <Style x:Key="MetricNote" TargetType="TextBlock" BasedOn="{StaticResource MetricLabel}">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="PresetChipButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,4" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1" Margin="0,0,8,0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDeviceOnline}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding DeviceOnlineStatusText, Mode=OneWay}" FontSize="11.5" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding ConnectionBadgeText, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsNetworkLost}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="MQTT 3.1.1 物联网通信工作台 · QoS 握手、通配符路由与断网续传" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ConnectionStatusMessage, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Shared Broker Connection & LWT/Replay Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,8" Margin="0,0,0,8">
+            <WrapPanel VerticalAlignment="Center">
+                <ComboBox Width="256" Margin="0,0,8,0"
+                          ItemsSource="{Binding TransportModes}" SelectedItem="{Binding SelectedTransportMode}"
+                          DisplayMemberPath="Name" AutomationProperties.Name="MQTT模式选择" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,8,0"
+                            Visibility="{Binding IsRealTcpMode, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="Host:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                    <TextBox Width="106" Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,6,0" />
+                    <TextBlock Text="Port:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                    <TextBox Width="56" Text="{Binding PortText, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <TextBlock Text="ClientId:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                <TextBox Width="120" Text="{Binding ClientId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"
+                         AutomationProperties.Name="MQTT客户端标识" />
+
+                <Button Content="{Binding ConnectButtonText, Mode=OneWay}" Command="{Binding ToggleConnectionCommand}" Margin="0,0,8,0" />
+                <Button Content="模拟异常掉线 (LWT)" Command="{Binding SimulateNetworkDropCommand}" Margin="0,0,8,0" />
+                <Button Content="恢复重连 (续传)" Command="{Binding ReconnectNetworkCommand}" Margin="0,0,8,0" />
+                <Button Content="{Binding AutoPublishButtonText, Mode=OneWay}" Command="{Binding ToggleAutoPublishCommand}" />
+            </WrapPanel>
+        </Border>
+
+        <!-- Main Tabs -->
+        <TabControl Grid.Row="2">
+            <!-- Tab 1: Pub/Sub Console & QoS Handshake Visualizer -->
+            <TabItem Header="发布订阅 &amp; QoS 握手示波">
+                <Grid Margin="4,10,4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- QoS 0/1/2 & LWT Handshake Sequence Canvas -->
+                    <Border Grid.Row="0" Height="104" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource CanvasBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <controls:MqttHandshakeCanvas Trace="{Binding LatestTrace, Mode=OneWay}" />
+                    </Border>
+
+                    <!-- Left Pub/Sub Controls + Right KPI, Inbox & Protocol Logs -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="348" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Scrollable Controls -->
+                        <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <TextBlock Text="消息发布 (PUBLISH)" Style="{StaticResource SectionTitle}" />
+                                    <ComboBox ItemsSource="{Binding TopicPresets}" SelectedItem="{Binding SelectedTopicPreset}"
+                                              DisplayMemberPath="Name" Margin="0,0,0,8" AutomationProperties.Name="工业主题预设" />
+
+                                    <TextBlock Text="发布主题 (Topic · 禁止通配符)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <TextBox Text="{Binding PublishTopic, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                             Margin="0,0,0,8" AutomationProperties.Name="发布主题" />
+
+                                    <TextBlock Text="JSON 载荷 (Payload · 留空+Retain 可清除保留)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <TextBox Text="{Binding PublishPayload, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                             TextWrapping="Wrap" Height="46" VerticalContentAlignment="Top"
+                                             Margin="0,0,0,8" AutomationProperties.Name="消息载荷" />
+
+                                    <TextBlock Text="服务质量等级 (QoS)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <ComboBox ItemsSource="{Binding QosOptions}" SelectedItem="{Binding SelectedQos}"
+                                              DisplayMemberPath="Name" Margin="0,0,0,4" AutomationProperties.Name="发布QoS" />
+                                    <TextBlock Text="{Binding SelectedQosSummary, Mode=OneWay}" Style="{StaticResource MetricLabel}"
+                                               TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                    <WrapPanel Margin="0,0,0,8">
+                                        <CheckBox Content="Retain 保留消息" IsChecked="{Binding RetainFlag}" Margin="0,0,14,4" />
+                                        <CheckBox Content="模拟网络丢包" IsChecked="{Binding SimulatePacketDrop}"
+                                                  IsEnabled="{Binding IsSimulatedMode}" Margin="0,0,0,4" />
+                                    </WrapPanel>
+
+                                    <Button Content="发布 MQTT 报文 (PUBLISH)" Command="{Binding PublishCommand}"
+                                            HorizontalAlignment="Stretch" AutomationProperties.Name="发布消息" />
+
+                                    <Separator Margin="0,12" />
+
+                                    <TextBlock Text="主题订阅管理 (SUBSCRIBE · 支持 + / #)" Style="{StaticResource SectionTitle}" />
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding NewSubscriptionFilter, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontFamily="Consolas" AutomationProperties.Name="订阅过滤器" />
+                                        <Button Grid.Column="2" Content="订阅" Command="{Binding SubscribeCommand}" Padding="12,4" />
+                                    </Grid>
+
+                                    <ComboBox ItemsSource="{Binding QosOptions}" SelectedItem="{Binding SelectedSubQos}"
+                                              DisplayMemberPath="Name" Margin="0,0,0,8" AutomationProperties.Name="订阅最大QoS" />
+
+                                    <ItemsControl ItemsSource="{Binding Subscriptions}" Margin="0,0,0,8">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type mqtt:MqttSubscriptionEntry}">
+                                                <Border Margin="0,0,0,4" Padding="8,4" CornerRadius="5" BorderThickness="1"
+                                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                                    <DockPanel>
+                                                        <Button DockPanel.Dock="Right" Content="退订" Padding="6,1" FontSize="10.5"
+                                                                Command="{Binding DataContext.UnsubscribeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding Filter}" />
+                                                        <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Margin="6,0,8,0"
+                                                                   FontFamily="Consolas" FontSize="10.5"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                                            <Run Text="{Binding QosTag, Mode=OneWay}" />
+                                                            <Run Text=" · 命中 " /><Run Text="{Binding HitCount, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding Filter, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5"
+                                                                   Foreground="{StaticResource CyanMetricBrush}"
+                                                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Button Content="模拟新大屏上线 · 拉取 Broker Retain 快照"
+                                            Command="{Binding ProbeNewDashboardRetainedCommand}"
+                                            IsEnabled="{Binding IsSimulatedMode}"
+                                            HorizontalAlignment="Stretch" Margin="0,0,0,8" />
+
+                                    <TextBlock Text="{Binding LastActionHint, Mode=OneWay}" FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Right KPI + Received Messages + Protocol Logs -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="142" />
+                            </Grid.RowDefinitions>
+
+                            <!-- KPI Strip -->
+                            <UniformGrid Grid.Row="0" Columns="4">
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="已发布报文" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding PublishedCount, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource CyanMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="订阅已接收" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ReceivedCount, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="Broker 保留数" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding RetainedCount, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource PurpleMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="离线缓存 / 已续传" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding OfflineBufferSummary, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- Received Messages Inbox -->
+                            <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearMessagesCommand}" Padding="8,1" FontSize="11" />
+                                        <TextBlock Text="订阅收件箱 (Subscriber Inbox · 实时观测 RETAIN / LWT / DUP / 断网续传)"
+                                                   Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding ReceivedMessages}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type mqtt:MqttReceivedMessage}">
+                                                <Border Padding="8,5" Margin="0,1" CornerRadius="5"
+                                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                    <StackPanel>
+                                                        <DockPanel Margin="0,0,0,2">
+                                                            <TextBlock DockPanel.Dock="Right" FontFamily="Consolas" FontSize="10"
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                                                <Run Text="命中 " /><Run Text="{Binding MatchedFilter, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding TimeText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,8,0" />
+                                                                <TextBlock Text="{Binding Topic, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource CyanMetricBrush}" Margin="0,0,8,0" />
+                                                                <TextBlock Text="{Binding QosTag, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource PurpleMetricBrush}" Margin="0,0,8,0" />
+                                                                <TextBlock Text="{Binding FlagsText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsRetained}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsReplayed}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsLwt}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding Payload, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                                   TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Protocol Control Log -->
+                            <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearLogsCommand}" Padding="8,1" FontSize="11" />
+                                        <TextBlock Text="MQTT 3.1.1 控制报文与状态日志" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding ProtocolLogs}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type mqtt:MqttProtocolLog}">
+                                                <TextBlock FontFamily="Consolas" FontSize="10.5" TextWrapping="Wrap">
+                                                    <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <Run Text="  [" />
+                                                    <Run Text="{Binding Packet, Mode=OneWay}" FontWeight="Bold">
+                                                        <Run.Style>
+                                                            <Style TargetType="Run">
+                                                                <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Level}" Value="Warn">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Run.Style>
+                                                    </Run>
+                                                    <Run Text="]  " />
+                                                    <Run Text="{Binding Message, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: ISA-95 Topic Wildcard Lab & Broker Retained / LWT Inspector -->
+            <TabItem Header="通配符演练场 &amp; Broker 保留/遗嘱快照">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.08*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.92*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: ISA-95 Wildcard Matcher Lab -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="16,14">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="ISA-95 工业主题树通配符演练场 (+ / # / $SYS)" Style="{StaticResource SectionTitle}" FontSize="15" />
+                            <TextBlock Grid.Row="1" Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="验证 MQTT 3.1.1 §4.7 规范：'+' 匹配单级，'#' 必须位于末尾且匹配 0 或多级（含父级自身），'$' 系统主题不匹配前导通配符。" />
+
+                            <Grid Grid.Row="2" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding TestFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                         FontFamily="Consolas" FontSize="13" AutomationProperties.Name="通配符测试表达式" />
+                                <Button Grid.Column="2" Content="一键加入当前订阅" Command="{Binding ApplyTestFilterToSubscribeCommand}"
+                                        IsEnabled="{Binding IsTestFilterValid}" />
+                            </Grid>
+
+                            <WrapPanel Grid.Row="3" Margin="0,0,0,6">
+                                <Button Content="factory/line1/+/telemetry" Style="{StaticResource PresetChipButton}"
+                                        Command="{Binding ApplyWildcardPresetCommand}" CommandParameter="factory/line1/+/telemetry" />
+                                <Button Content="factory/line1/#" Style="{StaticResource PresetChipButton}"
+                                        Command="{Binding ApplyWildcardPresetCommand}" CommandParameter="factory/line1/#" />
+                                <Button Content="factory/+/+/status" Style="{StaticResource PresetChipButton}"
+                                        Command="{Binding ApplyWildcardPresetCommand}" CommandParameter="factory/+/+/status" />
+                                <Button Content="#" Style="{StaticResource PresetChipButton}"
+                                        Command="{Binding ApplyWildcardPresetCommand}" CommandParameter="#" />
+                                <Button Content="$SYS/#" Style="{StaticResource PresetChipButton}"
+                                        Command="{Binding ApplyWildcardPresetCommand}" CommandParameter="$SYS/#" />
+                                <Button Content="factory/#/invalid" Style="{StaticResource PresetChipButton}"
+                                        Command="{Binding ApplyWildcardPresetCommand}" CommandParameter="factory/#/invalid" />
+                            </WrapPanel>
+
+                            <TextBlock Grid.Row="4" Text="{Binding TestFilterStatusText, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTestFilterValid}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <ListBox Grid.Row="5" ItemsSource="{Binding TopicMatchRows}" Style="{StaticResource DarkSafeListBox}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type mqtt:TopicMatchTestRow}">
+                                        <Border Padding="8,6" Margin="0,2" CornerRadius="5"
+                                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="58" />
+                                                    <ColumnDefinition Width="1.2*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" FontFamily="Consolas" FontSize="11" FontWeight="Bold" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="未命中" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMatch}" Value="True">
+                                                                    <Setter Property="Text" Value="✓ 命中" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="1" Text="{Binding SampleTopic, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Reason, Mode=OneWay}" FontSize="11"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                           VerticalAlignment="Center" TextAlignment="Right" TextTrimming="CharacterEllipsis" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right: LWT Lifecycle & Broker Retained Messages Inspector -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- LWT & Birth Certificate Card -->
+                        <Border Grid.Row="0" Style="{StaticResource CompactCardStyle}" Padding="16,12">
+                            <StackPanel>
+                                <TextBlock Text="遗嘱消息 (LWT) 与设备在线生命周期" Style="{StaticResource SectionTitle}" FontSize="15" />
+
+                                <Border CornerRadius="6" Padding="10,8" Margin="0,2,0,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDeviceOnline}" Value="True">
+                                                                <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                            <TextBlock Text="{Binding DeviceOnlineStatusText, Mode=OneWay}" FontWeight="SemiBold" FontSize="13" />
+                                        </StackPanel>
+                                        <TextBlock FontFamily="Consolas" FontSize="11" Foreground="{StaticResource CyanMetricBrush}">
+                                            <Run Text="LWT Topic: " /><Run Text="{Binding LwtTopic, Mode=OneWay}" />
+                                        </TextBlock>
+                                        <TextBlock FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap">
+                                            <Run Text="LWT Payload: " /><Run Text="{Binding LwtPayload, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <UniformGrid Columns="3" Margin="0,0,0,8">
+                                    <Button Content="{Binding ConnectButtonText, Mode=OneWay}" Command="{Binding ToggleConnectionCommand}" Margin="0,0,4,0" FontSize="11" />
+                                    <Button Content="异常掉线 (LWT)" Command="{Binding SimulateNetworkDropCommand}" Margin="2,0,2,0" FontSize="11" />
+                                    <Button Content="恢复重连 (续传)" Command="{Binding ReconnectNetworkCommand}" Margin="4,0,0,0" FontSize="11" />
+                                </UniformGrid>
+
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                           Text="面试考点：客户端发送 DISCONNECT (0xE0 0x00) 正常退出时，Broker 会销毁 LWT；仅当网线拔出 / 进程崩溃 / 1.5×KeepAlive 超时，Broker 才代发 LWT 通知上位机大屏变红。" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Broker Retained Store Table -->
+                        <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="16,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Grid.Row="0" Margin="0,0,0,4">
+                                    <TextBlock DockPanel.Dock="Right" FontFamily="Consolas" FontSize="11"
+                                               Foreground="{StaticResource PurpleMetricBrush}" VerticalAlignment="Center">
+                                        <Run Text="当前保留 " /><Run Text="{Binding RetainedCount, Mode=OneWay}" /><Run Text=" 条" />
+                                    </TextBlock>
+                                    <TextBlock Text="Broker 保留消息表 (Retained Store)" Style="{StaticResource SectionTitle}" FontSize="15" Margin="0" />
+                                </DockPanel>
+                                <TextBlock Grid.Row="1" Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                           Text="每个主题仅保留最新 1 条 Retain=true 消息；向该主题发送空载荷 + Retain=true 即可删除。" />
+
+                                <ListBox Grid.Row="2" ItemsSource="{Binding RetainedEntries}" Style="{StaticResource DarkSafeListBox}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type mqtt:MqttRetainedEntry}">
+                                            <Border Padding="8,6" Margin="0,2" CornerRadius="5"
+                                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                <DockPanel>
+                                                    <Button DockPanel.Dock="Right" Content="清除" Padding="8,2" FontSize="11" VerticalAlignment="Center"
+                                                            Margin="8,0,0,0"
+                                                            Command="{Binding DataContext.ClearRetainedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding Topic}" />
+                                                    <StackPanel>
+                                                        <DockPanel Margin="0,0,0,2">
+                                                            <TextBlock DockPanel.Dock="Right" FontFamily="Consolas" FontSize="10"
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                                                <Run Text="{Binding QosTag, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding UpdatedText, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                            <TextBlock Text="{Binding Topic, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource CyanMetricBrush}" TextTrimming="CharacterEllipsis" />
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding Payload, Mode=OneWay}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>
