@@ -62,18 +62,21 @@ namespace LearnSmartManufacturing.Tests.ViewModels
         }
 
         [Fact]
-        public void MachineVisionGroup_ContainsFourConciseSubpagesAndNavigatesCorrectly()
+        public void MachineVisionGroup_ContainsFiveConciseSubpagesAndNavigatesCorrectly()
         {
             var nav = new RecordingNavigationService();
             var vm = new MainWindowViewModel(nav);
 
             var visionGroup = vm.NavigationItems.First(i => i.Title == "机器视觉");
-            Assert.Equal(["相机", "镜头", "光源", "仿真"], visionGroup.Children.Select(c => c.Title).ToArray());
+            Assert.Equal(["相机", "镜头", "光源", "仿真", "标定"], visionGroup.Children.Select(c => c.Title).ToArray());
 
             var lightingItem = visionGroup.Children.Single(c => c.Title == "光源");
             lightingItem.IsSelected = true;
-
             Assert.Equal(typeof(LightingViewModel), nav.History[^1]);
+
+            var calibItem = visionGroup.Children.Single(c => c.Title == "标定");
+            calibItem.IsSelected = true;
+            Assert.Equal(typeof(CalibrationViewModel), nav.History[^1]);
         }
 
         private sealed class RecordingNavigationService : ObservableObject, INavigationService

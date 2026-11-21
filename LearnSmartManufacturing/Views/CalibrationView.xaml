@@ -1,0 +1,520 @@
+<UserControl x:Class="LearnSmartManufacturing.Views.CalibrationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:vision="clr-namespace:LearnSmartManufacturing.Models.Vision"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:CalibrationViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="18.5" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="CompactSliderBadge" TargetType="TextBlock" BasedOn="{StaticResource SliderBadge}">
+            <Setter Property="Width" Value="76" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="SmallActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,3" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1" Margin="0,0,8,0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding HandednessText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{StaticResource CyanMetricBrush}" />
+                </Border>
+                <Button Content="恢复默认" Command="{Binding ResetDefaultsCommand}" Padding="10,4" FontSize="11.5" />
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="机器视觉 × 运动控制 · 九点手眼标定与旋转中心纠偏实验室" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding MountModeNote, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Main 2-Tab Workbench -->
+        <TabControl Grid.Row="1">
+            <!-- Tab 1: Nine-Point Hand-Eye Affine Calibration -->
+            <TabItem Header="九点标定 · 2D 仿射手眼矩阵 (OLS)">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="344" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Scrollable Controls & Affine Matrix Card -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="手眼安装架构" Style="{StaticResource SectionTitle}" />
+                                <ComboBox ItemsSource="{Binding MountModes}" SelectedItem="{Binding SelectedMountMode}"
+                                          DisplayMemberPath="Name" Margin="0,0,0,10" AutomationProperties.Name="手眼安装模式" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding ScaleInputText, Mode=OneWay}" />
+                                    <TextBlock Text="像素当量 s (mm/px)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="0.02" Maximum="0.10" Value="{Binding ScaleMmPerPx}" TickFrequency="0.005" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding InstallAngleText, Mode=OneWay}" />
+                                    <TextBlock Text="相机安装偏角 θ" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="-35" Maximum="35" Value="{Binding InstallAngleDeg}" TickFrequency="0.5" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding PixelNoiseText, Mode=OneWay}" />
+                                    <TextBlock Text="亚像素提取噪声 σ" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="0" Maximum="2.0" Value="{Binding PixelNoiseSigmaPx}" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <CheckBox Content="图像 Y↓ 与机械 Y↑ 镜像翻转 (工业常规)" IsChecked="{Binding FlipImageY}" Margin="0,0,0,6" />
+                                <CheckBox Content="在 #5 中心点注入误检异常点 (Outlier)" IsChecked="{Binding InjectOutlierOnPoint5}" Margin="0,0,0,6" />
+                                <CheckBox Content="启用迭代残差剔除 (RANSAC-lite 去离群)" IsChecked="{Binding EnableOutlierRejection}" Margin="0,0,0,8" />
+
+                                <UniformGrid Columns="2" Margin="0,0,0,10">
+                                    <Button Content="注入 #5 异常点" Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                            Command="{Binding DemoOutlierInjectionCommand}" />
+                                    <Button Content="一键剔除并重算" Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                            Command="{Binding DemoOutlierRejectionFixCommand}" />
+                                </UniformGrid>
+
+                                <Separator Margin="0,0,0,10" />
+
+                                <!-- Solved 2x3 Affine Matrix -->
+                                <Border CornerRadius="6" Padding="10,8" Margin="0,0,0,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,4">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding UsedPointsText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                                       Foreground="{StaticResource PurpleMetricBrush}" />
+                                            <TextBlock Text="最小二乘求解仿射矩阵 M (2×3)" FontSize="11.5" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource CyanMetricBrush}" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding MatrixRow1Text, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                        <TextBlock Text="{Binding MatrixRow2Text, Mode=OneWay}" FontFamily="Consolas" FontSize="11" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Interactive Click-to-Map Readout -->
+                                <Border CornerRadius="6" Padding="10,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="交互坐标映射验证（点击右侧像素图）" FontSize="11.5" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                        <TextBlock FontFamily="Consolas" FontSize="11">
+                                            <Run Text="像素 (u, v) = " Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            <Run Text="{Binding TestPixelCoordText, Mode=OneWay}" Foreground="{StaticResource CyanMetricBrush}" FontWeight="Bold" />
+                                        </TextBlock>
+                                        <TextBlock FontFamily="Consolas" FontSize="11" Margin="0,2,0,0">
+                                            <Run Text="机械 (X, Y) = " Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            <Run Text="{Binding MappedWorldCoordText, Mode=OneWay}" Foreground="{DynamicResource SystemFillColorSuccessBrush}" FontWeight="Bold" />
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding InverseRoundTripText, Mode=OneWay}" FontFamily="Consolas" FontSize="10"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right KPI Cards + Dual Plane Calibration Canvas + 9-Point Residual Table -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="1.15*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="0.85*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- 4 KPI Cards -->
+                        <UniformGrid Grid.Row="0" Columns="4">
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="重投影均方根误差 RMSE" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding RmseText, Mode=OneWay}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CompactMetricValue}">
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRmseHealthy}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding MaxErrorText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="反解当量 Sx / Sy (mm/px)" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ScaleSolvedText, Mode=OneWay}" FontFamily="Consolas" FontSize="14.5" FontWeight="Bold"
+                                               Margin="0,4,0,0" Foreground="{StaticResource CyanMetricBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="反解偏角与正交误差" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding RotationSolvedText, Mode=OneWay}" FontFamily="Consolas" FontSize="13" FontWeight="Bold"
+                                               Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{StaticResource PurpleMetricBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="测试点映射世界坐标" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding MappedWorldCoordText, Mode=OneWay}" FontFamily="Consolas" FontSize="13.5" FontWeight="Bold"
+                                               Margin="0,4,0,0" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    <TextBlock Text="{Binding TestPixelCoordText, Mode=OneWay}" FontFamily="Consolas" FontSize="10"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Interactive Dual-Plane Nine-Point Canvas -->
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:NinePointCalibrationCanvas
+                                Result="{Binding AffineResult, Mode=OneWay}"
+                                TestPixelU="{Binding TestPixelU}"
+                                TestPixelV="{Binding TestPixelV}" />
+                        </Border>
+
+                        <!-- 9-Point Calibration Data & Reprojection Residual Table -->
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="九点标定采点明细与逐点重投影残差（红色表示离群异常点）" Style="{StaticResource SectionTitle}" />
+
+                                <Grid Grid.Row="1" Margin="6,0,6,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="42" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="96" />
+                                        <ColumnDefinition Width="68" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="点号" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="1" Text="提取像素 (u, v)" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="2" Text="机械实测 (X, Y) mm" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="3" Text="重投影残差" Style="{StaticResource MetricLabel}" TextAlignment="Right" />
+                                    <TextBlock Grid.Column="4" Text="状态" Style="{StaticResource MetricLabel}" TextAlignment="Right" />
+                                </Grid>
+
+                                <ListBox Grid.Row="2" ItemsSource="{Binding CalibrationPoints}" Style="{StaticResource DarkSafeListBox}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vision:CalibrationPointPair}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="42" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="96" />
+                                                    <ColumnDefinition Width="68" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                                                           Foreground="{StaticResource CyanMetricBrush}">
+                                                    <Run Text="#" /><Run Text="{Binding Index, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="1" Text="{Binding PixelText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                                <TextBlock Grid.Column="2" Text="{Binding WorldText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock Grid.Column="3" Text="{Binding ResidualText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" TextAlignment="Right">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsOutlier}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="4" FontFamily="Consolas" FontSize="10.5" TextAlignment="Right">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="正常内点" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsOutlier}" Value="True">
+                                                                    <Setter Property="Text" Value="⚠ 异常" />
+                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: Rotation Center Calibration & Rotate-Then-Translate Visual Alignment -->
+            <TabItem Header="旋转中心标定 &amp; 先转后补视觉纠偏">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="346" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Rotation Calibration & Incoming Offset Controls -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="① 旋转中心标定 (Kåsa 最小二乘拟合圆)" Style="{StaticResource SectionTitle}" />
+                                <ComboBox ItemsSource="{Binding SampleCountOptions}" SelectedItem="{Binding SelectedSampleCount}"
+                                          DisplayMemberPath="Name" Margin="0,0,0,8" AutomationProperties.Name="旋转标定采点数" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding ArmRadiusText, Mode=OneWay}" />
+                                    <TextBlock Text="偏心旋转半径 R" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="5" Maximum="45" Value="{Binding ArmRadiusMm}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding RotationSpanText, Mode=OneWay}" Width="116" />
+                                    <TextBlock Text="标定旋转跨度" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="6" Maximum="90" Value="{Binding RotationSpanDeg}" TickFrequency="2" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding RotationNoiseText, Mode=OneWay}" />
+                                    <TextBlock Text="采点定位噪声" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="0" Maximum="0.10" Value="{Binding RotationNoiseMm}" TickFrequency="0.005" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <UniformGrid Columns="2" Margin="0,0,0,10">
+                                    <Button Content="演示小跨度误差放大" Style="{StaticResource SmallActionButton}" Margin="0,0,4,0"
+                                            Command="{Binding DemoSmallSpanTrapCommand}" />
+                                    <Button Content="恢复 5 点 ±30°" Style="{StaticResource SmallActionButton}" Margin="4,0,0,0"
+                                            Command="{Binding RestoreOptimalRotationCalibrationCommand}" />
+                                </UniformGrid>
+
+                                <Separator Margin="0,0,0,10" />
+
+                                <TextBlock Text="② 来料偏差与先转后补纠偏演练" Style="{StaticResource SectionTitle}" />
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding IncomingAngleErrorText, Mode=OneWay}" />
+                                    <TextBlock Text="来料角度偏差 Δθ" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="-30" Maximum="30" Value="{Binding IncomingAngleErrorDeg}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding IncomingOffsetXText, Mode=OneWay}" />
+                                    <TextBlock Text="来料 X 偏移" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="-15" Maximum="15" Value="{Binding IncomingOffsetXMm}" TickFrequency="0.5" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding IncomingOffsetYText, Mode=OneWay}" />
+                                    <TextBlock Text="来料 Y 偏移" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="-15" Maximum="15" Value="{Binding IncomingOffsetYMm}" TickFrequency="0.5" IsSnapToTickEnabled="True" Margin="0,2,0,10" />
+
+                                <Border CornerRadius="6" Padding="10,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="正确纠偏指令（先转后补 · 零残差）" FontSize="11.5" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" Margin="0,0,0,3" />
+                                        <TextBlock Text="{Binding CorrectCommandText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                        <TextBlock Text="{Binding AlignmentSummaryText, Mode=OneWay}" FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right KPI Cards + Rotation Center Canvas + Sample Points Table -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="1.25*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="0.75*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- 4 KPI Cards -->
+                        <UniformGrid Grid.Row="0" Columns="4">
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="拟合旋转中心 (Cx, Cy)" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding FittedCenterText, Mode=OneWay}" FontFamily="Consolas" FontSize="13.5" FontWeight="Bold"
+                                               Margin="0,4,0,0" Foreground="{StaticResource CyanMetricBrush}" />
+                                    <TextBlock Text="真值 (100.000, 60.000)" FontFamily="Consolas" FontSize="10"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="圆心真值估计误差" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding CenterTrueErrorText, Mode=OneWay}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CompactMetricValue}">
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCenterErrorHealthy}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock FontFamily="Consolas" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                        <Run Text="拟合半径 " /><Run Text="{Binding FittedRadiusText, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="径向拟合残差 RMSE" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding CircleRmseText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                               Foreground="{StaticResource PurpleMetricBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="忽略旋转中心误补残差" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding NaiveResidualText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                               Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    <TextBlock Text="正确先转后补残差 = 0.000 mm" FontFamily="Consolas" FontSize="10"
+                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Rotation Center & Alignment Vector Canvas -->
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:RotationCenterCanvas
+                                CircleResult="{Binding CircleResult, Mode=OneWay}"
+                                AlignmentResult="{Binding AlignmentResult, Mode=OneWay}" />
+                        </Border>
+
+                        <!-- Sampled Rotation Points Table -->
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="多角度旋转采点记录（圆方程：2Cx·x + 2Cy·y + (R²-Cx²-Cy²) = x²+y²）" Style="{StaticResource SectionTitle}" />
+
+                                <Grid Grid.Row="1" Margin="6,0,6,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="52" />
+                                        <ColumnDefinition Width="96" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="序号" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="1" Text="R 轴转角" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="2" Text="世界坐标 (X, Y) mm" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="3" Text="径向拟合残差" Style="{StaticResource MetricLabel}" TextAlignment="Right" />
+                                </Grid>
+
+                                <ListBox Grid.Row="2" ItemsSource="{Binding RotationSamples}" Style="{StaticResource DarkSafeListBox}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vision:RotationSamplePoint}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="52" />
+                                                    <ColumnDefinition Width="96" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="110" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                                                           Foreground="{StaticResource CyanMetricBrush}">
+                                                    <Run Text="#" /><Run Text="{Binding Index, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="1" Text="{Binding AngleText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                           Foreground="{StaticResource PurpleMetricBrush}" />
+                                                <TextBlock Grid.Column="2" Text="{Binding CoordText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                                <TextBlock Grid.Column="3" Text="{Binding ResidualText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                           Foreground="{DynamicResource SystemFillColorSuccessBrush}" TextAlignment="Right" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

@@ -37,6 +37,7 @@ namespace LearnSmartManufacturing
                     services.AddSingleton<LensViewModel>();
                     services.AddSingleton<LightingViewModel>();
                     services.AddSingleton<SimulationViewModel>();
+                    services.AddSingleton<CalibrationViewModel>();
                     services.AddScoped<IMotionAxis>(_ => new SimulatedMotionAxis());
                     services.AddScoped<IXyMotionStage>(_ => new SimulatedXyMotionStage());
                     services.AddTransient<MotionControlViewModel>();

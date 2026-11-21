@@ -27,7 +27,8 @@ namespace LearnSmartManufacturing.ViewModels
                     new NavigationItem("相机", typeof(CameraViewModel)),
                     new NavigationItem("镜头", typeof(LensViewModel)),
                     new NavigationItem("光源", typeof(LightingViewModel)),
-                    new NavigationItem("仿真", typeof(SimulationViewModel))),
+                    new NavigationItem("仿真", typeof(SimulationViewModel)),
+                    new NavigationItem("标定", typeof(CalibrationViewModel))),
                 new NavigationItem("运动控制", typeof(MotionControlViewModel)),
             ];
             SettingsItem = new NavigationItem("设置", typeof(SettingsViewModel));
