@@ -12,7 +12,8 @@
 | 系统 | 首页 / 设置 | 已完成 | 模块概览、WPF Fluent 浅色 / 深色 / 跟随系统主题实时切换 |
 | WPF | 异步编程 | 已完成 | 60 FPS UI 心跳/死锁对照、BoundedChannel 背压仿真、SemaphoreSlim 多设备并发泳道与联动取消 |
 | WPF | MVVM | 已完成 | 零业务 Code-Behind：`ObservableValidator` 跨属性校验、`AsyncRelayCommand` 防重入/取消、`WeakReferenceMessenger` 双向解耦与数据流追踪 |
-| 协议 | Modbus / EtherCAT / MQTT | 规划中 | 占位页面 |
+| 协议 | Modbus | 已完成 | 手写 Modbus TCP (MBAP) / RTU (CRC-16) 编解码、帧解剖画布、ABCD/CDAB/DCBA/BADC 字节序、内置模拟 PLC 轮询与真实 Socket 客户端 |
+| 协议 | EtherCAT / MQTT | 规划中 | 占位页面 |
 | 运动控制 | 运动控制 | 已完成 | 单轴 HAL + PLCopen 状态机 + T/S 7 段规划示波；XY 双轴 PTP/G01/G02/G03 插补、示教配方与 PSO 飞拍 |
 
 ## 技术栈

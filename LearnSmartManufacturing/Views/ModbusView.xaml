@@ -4,8 +4,602 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:modbus="clr-namespace:LearnSmartManufacturing.Models.Modbus"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:ModbusViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+        <SolidColorBrush x:Key="LedOffBrush" Color="#6C7086" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+
+        <Style x:Key="MetricNote" TargetType="TextBlock" BasedOn="{StaticResource MetricLabel}">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="LedDot" TargetType="Ellipse">
+            <Setter Property="Width" Value="9" />
+            <Setter Property="Height" Value="9" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Fill" Value="{StaticResource LedOffBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1" Margin="0,0,8,0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding ConnectionBadgeText}" FontFamily="Consolas" FontSize="12" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+                <TextBlock VerticalAlignment="Center" FontFamily="Consolas" FontSize="11"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                    <Run Text="TX " /><Run Text="{Binding TxCount, Mode=OneWay}" />
+                    <Run Text=" · RX " /><Run Text="{Binding RxCount, Mode=OneWay}" />
+                    <Run Text=" · ERR " /><Run Text="{Binding ErrorCount, Mode=OneWay}" />
+                </TextBlock>
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="Modbus 工业通信工作台 · TCP (MBAP) / RTU (CRC-16) 与字节序解析" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ConnectionStatusMessage}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Shared Connection & Polling Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,8" Margin="0,0,0,8">
+            <WrapPanel VerticalAlignment="Center">
+                <ComboBox Width="250" Margin="0,0,8,0"
+                          ItemsSource="{Binding TransportModes}" SelectedItem="{Binding SelectedTransportMode}"
+                          DisplayMemberPath="Name" AutomationProperties.Name="Modbus传输模式" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,8,0"
+                            Visibility="{Binding IsRealTcpMode, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="IP:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                    <TextBox Width="106" Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,6,0" />
+                    <TextBlock Text="Port:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                    <TextBox Width="56" Text="{Binding PortText, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+
+                <TextBlock Text="站号:" VerticalAlignment="Center" Margin="0,0,4,0" Style="{StaticResource MetricLabel}" />
+                <TextBox Width="44" Text="{Binding UnitIdText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"
+                         AutomationProperties.Name="Modbus从站号" />
+
+                <Button Content="{Binding ConnectButtonText}" Command="{Binding ToggleConnectionCommand}" Margin="0,0,8,0" />
+                <Button Content="{Binding PollButtonText}" Command="{Binding TogglePollingCommand}" Margin="0,0,8,0" />
+
+                <TextBlock Text="轮询周期:" VerticalAlignment="Center" Margin="4,0,4,0" Style="{StaticResource MetricLabel}" />
+                <Slider Width="92" Minimum="200" Maximum="2000" Value="{Binding PollIntervalMs}"
+                        TickFrequency="100" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding PollIntervalText}" FontFamily="Consolas" FontSize="11"
+                           VerticalAlignment="Center" Margin="6,0,0,0"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </WrapPanel>
+        </Border>
+
+        <!-- Main Tabs -->
+        <TabControl Grid.Row="2">
+            <!-- Tab 1: Master Console & Byte-level Frame Dissector -->
+            <TabItem Header="主站调试 &amp; 字节帧解剖">
+                <Grid Margin="4,10,4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Color-coded Frame Dissector -->
+                    <Border Grid.Row="0" Height="96" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource CanvasBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <controls:ModbusFrameCanvas Transaction="{Binding LatestTransaction, Mode=OneWay}" />
+                    </Border>
+
+                    <!-- Left Request Builder + Right Register Table & Raw Hex Log -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="328" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Request Panel -->
+                        <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <TextBlock Text="功能码与报文构造" Style="{StaticResource SectionTitle}" />
+                                    <ComboBox ItemsSource="{Binding FunctionCodes}" SelectedItem="{Binding SelectedFunctionCode}"
+                                              DisplayMemberPath="Name" Margin="0,0,0,8" AutomationProperties.Name="Modbus功能码" />
+
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="起始地址 (0-based)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                            <TextBox Text="{Binding StartAddressText, UpdateSourceTrigger=PropertyChanged}"
+                                                     AutomationProperties.Name="起始地址" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Visibility="{Binding IsReadFunction, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="读取数量" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                            <TextBox Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}"
+                                                     AutomationProperties.Name="读取数量" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Visibility="{Binding IsWriteFunction, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="{Binding WriteValueLabel}" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" TextTrimming="CharacterEllipsis" />
+                                            <TextBox Text="{Binding WriteValueText, UpdateSourceTrigger=PropertyChanged}"
+                                                     AutomationProperties.Name="写入值" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="{Binding ModbusAddressHint}" Style="{StaticResource MetricNote}" Margin="0,0,0,8" />
+
+                                    <Button Content="发送单次 Modbus 请求" Command="{Binding SendRequestCommand}"
+                                            HorizontalAlignment="Stretch" AutomationProperties.Name="发送请求" />
+
+                                    <Separator Margin="0,12" />
+
+                                    <TextBlock Text="异常帧与总线故障演练（模拟从站）" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="2" IsEnabled="{Binding IsSimulatedMode}">
+                                        <Button Content="非法地址 Ex 0x02" Command="{Binding ArmFaultCommand}" CommandParameter="IllegalAddress" Margin="0,0,4,4" FontSize="11" />
+                                        <Button Content="从站故障 Ex 0x04" Command="{Binding ArmFaultCommand}" CommandParameter="SlaveFailure" Margin="4,0,0,4" FontSize="11" />
+                                        <Button Content="损坏 RTU CRC-16" Command="{Binding ArmFaultCommand}" CommandParameter="CorruptRtuCrc" Margin="0,0,4,0" FontSize="11" />
+                                        <Button Content="模拟响应超时" Command="{Binding ArmFaultCommand}" CommandParameter="Timeout" Margin="4,0,0,0" FontSize="11" />
+                                    </UniformGrid>
+                                    <TextBlock Text="{Binding ArmedFaultBanner}" Margin="0,6,0,0" FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+
+                                    <Separator Margin="0,10" />
+                                    <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                               Text="注：点击上方任一故障按钮后，再点“发送单次 Modbus 请求”即可在顶部帧解剖画布中看到红色异常码 (FC|0x80) 或 CRC-16 校验失败详情。" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Right Register Table + Raw TX/RX Log -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="156" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Register / Coil View -->
+                            <Border Grid.Row="0" Style="{StaticResource CompactCardStyle}" Padding="12,10">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="寄存器 / 线圈实时映射表" Style="{StaticResource SectionTitle}" />
+
+                                    <Grid Grid.Row="1" Margin="6,0,6,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="52" />
+                                            <ColumnDefinition Width="64" />
+                                            <ColumnDefinition Width="1.2*" />
+                                            <ColumnDefinition Width="72" />
+                                            <ColumnDefinition Width="64" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="偏移" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="1" Text="地址" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="2" Text="工程含义" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="3" Text="HEX" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="4" Text="UInt16" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="5" Text="工程解析" Style="{StaticResource MetricLabel}" />
+                                    </Grid>
+
+                                    <ListBox Grid.Row="2" ItemsSource="{Binding RegisterRows}" Background="Transparent" BorderThickness="0"
+                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="6,3" />
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type modbus:RegisterRow}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="52" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="1.2*" />
+                                                        <ColumnDefinition Width="72" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Address}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding ModbusAddress}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{StaticResource CyanMetricBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Description}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding HexText}" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource PurpleMetricBrush}" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding RawValue}" FontFamily="Consolas" FontSize="11" />
+                                                    <TextBlock Grid.Column="5" Text="{Binding EngineeringValue}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}" TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Raw TX / RX Hex Transaction Log -->
+                            <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearTransactionsCommand}"
+                                                Padding="8,1" FontSize="11" />
+                                        <TextBlock Text="原始报文收发监视器 (TX / RX Hex，点击条目可在顶部解剖)" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding Transactions}" SelectedItem="{Binding LatestTransaction}"
+                                             Background="Transparent" BorderThickness="0"
+                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type modbus:ModbusTransaction}">
+                                                <StackPanel Margin="0,2">
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding StatusTag}" FontFamily="Consolas" FontSize="10" FontWeight="Bold">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock FontFamily="Consolas" FontSize="10.5">
+                                                            <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                            <Run Text="  " />
+                                                            <Run Text="{Binding Summary, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </DockPanel>
+                                                    <TextBlock FontFamily="Consolas" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis">
+                                                        <Run Text="TX: " Foreground="{StaticResource CyanMetricBrush}" /><Run Text="{Binding RequestHex, Mode=OneWay}" />
+                                                        <Run Text="   RX: " Foreground="{DynamicResource SystemFillColorSuccessBrush}" /><Run Text="{Binding ResponseHex, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: 32-bit Byte-Order Lab & Simulated PLC Dashboard -->
+            <TabItem Header="字节序解析实验室 &amp; 模拟 PLC 看板">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.05*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.95*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: 32-bit Endianness Lab -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="16,14">
+                        <StackPanel>
+                            <TextBlock Text="32-bit 多寄存器字节序实验室 (IEEE-754 Float)" Style="{StaticResource SectionTitle}" FontSize="15" />
+                            <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="不同品牌 PLC 存放 32 位浮点数时 4 字节排列顺序不同（西门子常用 ABCD，汇川/台达常用 CDAB）。可测试以不同字节序写入 40001-40002 并观察解码差异：" />
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="0.8*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="当前主站解码/编码字节序" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <ComboBox ItemsSource="{Binding ByteOrders}" SelectedItem="{Binding SelectedByteOrder}"
+                                              DisplayMemberPath="Name" AutomationProperties.Name="Modbus字节序" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="编码测试 Float32" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                    <TextBox Text="{Binding EncoderFloatText, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="测试浮点数值" />
+                                </StackPanel>
+                                <Button Grid.Column="4" Content="FC 0x10 写入 40001" VerticalAlignment="Bottom"
+                                        Command="{Binding WriteFloatToTargetTempCommand}" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding PlcRawPairHexText}" FontFamily="Consolas" FontSize="12"
+                                       Foreground="{StaticResource PurpleMetricBrush}" Margin="0,4,0,8" />
+
+                            <!-- 4-Order Comparison Table -->
+                            <Border CornerRadius="6" BorderThickness="1" Padding="10,8"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="74" />
+                                            <ColumnDefinition Width="74" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="106" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="字节序" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="1" Text="Reg[0]" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="2" Text="Reg[1]" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="3" Text="报文 4 字节流" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Grid.Column="4" Text="按此序解 40001" Style="{StaticResource MetricLabel}" TextAlignment="Right" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding EndianRows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:EndianPreviewRow}">
+                                                <Grid Margin="0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="58" />
+                                                        <ColumnDefinition Width="74" />
+                                                        <ColumnDefinition Width="74" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="106" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding OrderName}" FontFamily="Consolas" FontSize="12" FontWeight="Bold"
+                                                               Foreground="{StaticResource CyanMetricBrush}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Reg0Hex}" FontFamily="Consolas" FontSize="12" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Reg1Hex}" FontFamily="Consolas" FontSize="12" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding WireBytesHex}" FontFamily="Consolas" FontSize="11.5"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding DecodedFromPlc}" FontFamily="Consolas" FontSize="12" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}" TextAlignment="Right" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Style="{StaticResource MetricLabel}" Margin="0,10,0,0" TextWrapping="Wrap"
+                                       Text="面试演示技巧：模拟 PLC 内部默认使用 CDAB。先在上方切换为 ABCD 观察右侧炉温变成极小/极大异常数，直观说明工业现场字节序配错的典型现象，再切回 CDAB 恢复正常。" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Right: Simulated Industrial PLC Live Dashboard -->
+                    <Border Grid.Column="2" Style="{StaticResource CompactCardStyle}" Padding="16,14">
+                        <StackPanel>
+                            <TextBlock Text="模拟工业 PLC 实时工艺看板（基于 Modbus 轮询）" Style="{StaticResource SectionTitle}" FontSize="15" />
+                            <TextBlock Text="{Binding CurrentAndPressureText}" Style="{StaticResource MetricNote}" Margin="0,0,0,10" />
+
+                            <UniformGrid Columns="2" Margin="0,0,0,12">
+                                <Border Margin="0,0,6,8" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="实测炉温 (30001-30002)" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ActualTempText}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource CyanMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="6,0,0,8" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="设定炉温 (40001-40002)" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding TargetTempText}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,6,0" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="传送带速度 (40003 ×0.1)" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ConveyorSpeedText}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="6,0,0,0" Padding="10,8" CornerRadius="6"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="累计产能 (40004-40005)" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ProductionCountText}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource PurpleMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <TextBlock Text="输出线圈控制 (点击发送 FC 0x05 写单线圈)" Style="{StaticResource SectionTitle}" />
+                            <UniformGrid Columns="2" Margin="0,0,0,12">
+                                <Button Command="{Binding ToggleCoilCommand}" CommandParameter="0" Margin="0,0,6,6" HorizontalContentAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CoilRunEnable}" Value="True">
+                                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="00001 · 产线运行启动" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ToggleCoilCommand}" CommandParameter="1" Margin="6,0,0,6" HorizontalContentAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CoilHeaterEnable}" Value="True">
+                                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="00002 · 加热区使能" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ToggleCoilCommand}" CommandParameter="2" Margin="0,0,6,0" HorizontalContentAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CoilFanEnable}" Value="True">
+                                                            <Setter Property="Fill" Value="{StaticResource CyanMetricBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="00003 · 冷却风机" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ToggleCoilCommand}" CommandParameter="3" Margin="6,0,0,0" HorizontalContentAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CoilAlarmLamp}" Value="True">
+                                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="00004 · 报警蜂鸣灯" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                            </UniformGrid>
+
+                            <TextBlock Text="只读离散输入传感器 (FC 0x02 · 10001~10004)" Style="{StaticResource SectionTitle}" />
+                            <WrapPanel>
+                                <Border Margin="0,0,8,6" Padding="8,4" CornerRadius="8" BorderThickness="1"
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DiSafetyDoor}" Value="True">
+                                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="10001 安全门闭合" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,8,6" Padding="8,4" CornerRadius="8" BorderThickness="1"
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DiAirPressure}" Value="True">
+                                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="10002 气压正常" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,8,6" Padding="8,4" CornerRadius="8" BorderThickness="1"
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DiEStopOk}" Value="True">
+                                                            <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="10003 急停释放" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Margin="0,0,0,6" Padding="8,4" CornerRadius="8" BorderThickness="1"
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse>
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DiPartSensor}" Value="True">
+                                                            <Setter Property="Fill" Value="{StaticResource CyanMetricBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="10004 到位光电" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>
