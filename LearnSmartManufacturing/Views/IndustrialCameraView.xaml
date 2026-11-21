@@ -80,7 +80,7 @@
 							</StackPanel>
 						</Grid>
 
-						<TextBlock Text="{Binding Hint}" Foreground="#DE2D29" FontSize="12">
+						<TextBlock Text="{Binding Hint}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" FontSize="12" TextWrapping="Wrap">
 							<TextBlock.Style>
 								<Style TargetType="TextBlock">
 									<Setter Property="Visibility" Value="Visible" />

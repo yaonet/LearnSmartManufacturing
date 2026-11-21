@@ -10,12 +10,16 @@
              d:DesignHeight="760" d:DesignWidth="1100">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <!-- Bright Catppuccin Mocha palette for the fixed dark optical workbench & floating inset -->
         <SolidColorBrush x:Key="DofBrush" Color="#A6E3A1" />
         <SolidColorBrush x:Key="FovBrush" Color="#89DCEB" />
         <SolidColorBrush x:Key="ApertureBrush" Color="#CBA6F7" />
         <SolidColorBrush x:Key="WarnBrush" Color="#F38BA8" />
         <SolidColorBrush x:Key="RayBrush" Color="#F9E2AF" />
         <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+        <!-- Balanced hues with readable contrast on both Light and Dark Fluent cards -->
+        <SolidColorBrush x:Key="FovMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="ApertureMetricBrush" Color="#9A5CE6" />
 
         <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
@@ -55,8 +59,18 @@
             <Setter Property="FontSize" Value="14" />
         </Style>
 
-        <!-- Green when the workpiece is inside the DOF, red otherwise -->
+        <!-- Green when the workpiece is inside the DOF, red otherwise (for Fluent themed cards) -->
         <Style x:Key="StatusText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInDof}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Bright status text for the fixed dark floating inset -->
+        <Style x:Key="CanvasStatusText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsInDof}" Value="True">
@@ -68,6 +82,7 @@
         <!-- Compact preset chips; the accent colour comes from the ListBox Tag -->
         <Style x:Key="PresetListBox" TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0,6,0,0" />
@@ -82,6 +97,7 @@
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
                     <Style TargetType="ListBoxItem">
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                         <Setter Property="Margin" Value="0,0,4,4" />
                         <Setter Property="Padding" Value="4,5" />
                         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -164,7 +180,7 @@
                         <Slider Margin="0,4,0,0" Minimum="{Binding MinFocalMm, Mode=OneWay}" Maximum="{Binding MaxFocalMm, Mode=OneWay}"
                                 Value="{Binding FocalMm}" TickFrequency="0.5" IsSnapToTickEnabled="True"
                                 AutomationProperties.Name="镜头焦距 f (毫米)" />
-                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource DofBrush}"
+                        <ListBox Style="{StaticResource PresetListBox}" Tag="{DynamicResource SystemFillColorSuccessBrush}"
                                  ItemsSource="{Binding FocalPresets}" SelectedItem="{Binding SelectedFocalPreset}"
                                  DisplayMemberPath="Label">
                             <ListBox.ItemsPanel>
@@ -193,7 +209,7 @@
                         <Slider Margin="0,4,0,0" Minimum="{Binding MinFNumber, Mode=OneWay}" Maximum="{Binding MaxFNumber, Mode=OneWay}"
                                 Value="{Binding FNumber}" TickFrequency="0.1" IsSnapToTickEnabled="True"
                                 AutomationProperties.Name="光圈 F 值" />
-                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource ApertureBrush}"
+                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource ApertureMetricBrush}"
                                  ItemsSource="{Binding FNumberPresets}" SelectedItem="{Binding SelectedFNumberPreset}"
                                  DisplayMemberPath="Label">
                             <ListBox.ItemsPanel>
@@ -202,9 +218,11 @@
                                 </ItemsPanelTemplate>
                             </ListBox.ItemsPanel>
                         </ListBox>
-                        <Border Margin="0,6,0,0" Padding="8,6" CornerRadius="6" Background="#26F38BA8"
+                        <Border Margin="0,6,0,0" Padding="8,6" CornerRadius="6"
+                                Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
                                 Visibility="{Binding ShowDiffractionWarning, Converter={StaticResource BoolToVisibility}}">
-                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource WarnBrush}"
+                            <TextBlock TextWrapping="Wrap" FontSize="12"
+                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                        Text="⚠ 小孔径 (F ≥ 11) 衍射效应显著：艾里斑变大，反而使成像变模糊，景深收益有限。" />
                         </Border>
 
@@ -214,7 +232,7 @@
                             <TextBlock DockPanel.Dock="Right" Style="{StaticResource SliderBadge}" Text="{Binding CocLimitText}" Width="80" />
                             <TextBlock Text="容许弥散圆 c" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
                         </DockPanel>
-                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource FovBrush}"
+                        <ListBox Style="{StaticResource PresetListBox}" Tag="{StaticResource FovMetricBrush}"
                                  ItemsSource="{Binding CocPresets}" SelectedItem="{Binding SelectedCocPreset}">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -257,6 +275,8 @@
                                     <Setter Property="Height" Value="9" />
                                     <Setter Property="Margin" Value="0,0,5,0" />
                                     <Setter Property="VerticalAlignment" Value="Center" />
+                                    <Setter Property="Stroke" Value="{DynamicResource ControlStrongStrokeColorDefaultBrush}" />
+                                    <Setter Property="StrokeThickness" Value="0.75" />
                                 </Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize" Value="12" />
@@ -303,7 +323,7 @@
                     <Border>
                         <StackPanel>
                             <TextBlock Text="视野 FOV" Style="{StaticResource MetricLabel}" />
-                            <TextBlock Text="{Binding FovText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource FovBrush}"
+                            <TextBlock Text="{Binding FovText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource FovMetricBrush}"
                                        AutomationProperties.Name="视野 FOV 数值" />
                             <TextBlock Text="{Binding AngleText, StringFormat='2θ = {0}'}" Style="{StaticResource MetricNote}"
                                        AutomationProperties.Name="视场角" />
@@ -313,7 +333,7 @@
                     <Border>
                         <StackPanel>
                             <TextBlock Text="总景深 DOF" Style="{StaticResource MetricLabel}" />
-                            <TextBlock Text="{Binding TotalDofText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource DofBrush}"
+                            <TextBlock Text="{Binding TotalDofText}" Style="{StaticResource MetricValue}" Foreground="{DynamicResource SystemFillColorSuccessBrush}"
                                        AutomationProperties.Name="总景深数值" />
                             <TextBlock Text="{Binding HyperfocalText}" Style="{StaticResource MetricNote}" />
                             <TextBlock Text="{Binding FrontRearDofText}" Style="{StaticResource MetricNote}" />
@@ -323,7 +343,7 @@
                     <Border>
                         <StackPanel>
                             <TextBlock Text="像素分辨率" Style="{StaticResource MetricLabel}" />
-                            <TextBlock Text="{Binding PixelResText}" Style="{StaticResource MetricValue}" Foreground="{StaticResource RayBrush}"
+                            <TextBlock Text="{Binding PixelResText}" Style="{StaticResource MetricValue}" Foreground="{DynamicResource SystemFillColorCautionBrush}"
                                        AutomationProperties.Name="像素分辨率数值" />
                             <TextBlock Text="{Binding MagnificationText, StringFormat='放大倍率 β = {0}'}" Style="{StaticResource MetricNote}"
                                        AutomationProperties.Name="放大倍率" />
@@ -335,7 +355,7 @@
                         <StackPanel>
                             <TextBlock Text="{Binding AiryText}" Style="{StaticResource MetricLabel}" />
                             <TextBlock Text="{Binding CocActualText}" Style="{StaticResource MetricValue}"
-                                       Foreground="{StaticResource ApertureBrush}" AutomationProperties.Name="实际弥散圆数值" />
+                                       Foreground="{StaticResource ApertureMetricBrush}" AutomationProperties.Name="实际弥散圆数值" />
                             <TextBlock Text="{Binding CocStatusText}" Style="{StaticResource StatusText}" FontSize="12" FontWeight="SemiBold"
                                        AutomationProperties.Name="景深状态" />
                             <TextBlock Text="{Binding CocCompareText}" Style="{StaticResource MetricNote}" />
@@ -376,7 +396,7 @@
 
                                     <DockPanel Margin="0,8,0,0">
                                         <TextBlock DockPanel.Dock="Right" Text="{Binding PreviewBlurTag}" FontFamily="Consolas" FontSize="10"
-                                                   FontWeight="SemiBold" Style="{StaticResource StatusText}" />
+                                                   FontWeight="SemiBold" Style="{StaticResource CanvasStatusText}" />
                                         <TextBlock Text="传感器实时成像预览" FontFamily="Consolas" FontSize="10" Foreground="#A6ADC8" />
                                     </DockPanel>
                                     <Border Height="108" Margin="0,3,0,0" CornerRadius="6" Background="#0B0B14"
@@ -432,7 +452,7 @@
                                             <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,4"
                                                     Padding="5,1" CornerRadius="3" Background="#B3000000">
                                                 <TextBlock Text="{Binding PreviewBadgeText}" FontFamily="Consolas" FontSize="9"
-                                                           Style="{StaticResource StatusText}" />
+                                                           Style="{StaticResource CanvasStatusText}" />
                                             </Border>
                                         </Grid>
                                     </Border>

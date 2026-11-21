@@ -74,10 +74,9 @@ namespace LearnSmartManufacturing.Controls
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
-            if (_workpieceHit.Contains(e.GetPosition(this)))
+            if (_workpieceHit.Contains(e.GetPosition(this)) && CaptureMouse())
             {
                 _dragging = true;
-                CaptureMouse();
                 Cursor = Cursors.SizeNS;
                 InvalidateVisual();
                 e.Handled = true;
@@ -118,10 +117,22 @@ namespace LearnSmartManufacturing.Controls
             base.OnMouseLeftButtonUp(e);
             if (_dragging)
             {
-                _dragging = false;
-                ReleaseMouseCapture();
-                Cursor = _hover ? Cursors.SizeNS : null;
-                InvalidateVisual();
+                EndDrag(e.GetPosition(this));
+                if (IsMouseCaptured)
+                {
+                    ReleaseMouseCapture();
+                }
+
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            base.OnLostMouseCapture(e);
+            if (_dragging)
+            {
+                EndDrag(null);
             }
         }
 
@@ -134,6 +145,14 @@ namespace LearnSmartManufacturing.Controls
                 Cursor = null;
                 InvalidateVisual();
             }
+        }
+
+        private void EndDrag(Point? pointer)
+        {
+            _dragging = false;
+            _hover = pointer is { } pt && IsMouseOver && _workpieceHit.Contains(pt);
+            Cursor = _hover ? Cursors.SizeNS : null;
+            InvalidateVisual();
         }
 
         #endregion

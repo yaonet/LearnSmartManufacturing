@@ -42,7 +42,7 @@ namespace LearnSmartManufacturing.ViewModels
 			nameof(RecommendationText), nameof(Hint))]
 		public partial string TargetWidthText { get; set; } = "80";
 
-		public bool HasResult => TryGetInputs(out _, out _, out _);
+		public bool HasResult => TryGetResolution(out _, out _);
 
 		public string ResolutionText => TryGetResolution(out var nx, out var ny)
 			? $"{nx:N0} × {ny:N0} px"
@@ -84,7 +84,23 @@ namespace LearnSmartManufacturing.ViewModels
 			}
 		}
 
-		public string Hint => HasResult ? string.Empty : "请输入大于 0 的数值";
+		public string Hint
+		{
+			get
+			{
+				if (!TryGetInputs(out _, out _, out _))
+				{
+					return "请输入大于 0 的数值";
+				}
+
+				if (!TryGetResolution(out _, out _))
+				{
+					return "所需像素数超出可计算范围，请检查像素精度与目标尺寸";
+				}
+
+				return string.Empty;
+			}
+		}
 
 		private bool TryGetResolution(out long nx, out long ny)
 		{
@@ -96,7 +112,7 @@ namespace LearnSmartManufacturing.ViewModels
 
 			var x = Math.Ceiling(length / accuracy);
 			var y = Math.Ceiling(width / accuracy);
-			if (x > int.MaxValue || y > int.MaxValue)
+			if (!double.IsFinite(x) || !double.IsFinite(y) || x > int.MaxValue || y > int.MaxValue)
 			{
 				return false;
 			}
