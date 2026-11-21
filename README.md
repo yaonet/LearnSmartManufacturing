@@ -11,7 +11,7 @@
 | 机器视觉 | 相机仿真 | 已完成 | 薄透镜景深 (DOF) 与光路仿真、可拖拽工件、Z 轴局部剖面与离焦成像预览 |
 | 系统 | 首页 / 设置 | 已完成 | 模块概览、WPF Fluent 浅色 / 深色 / 跟随系统主题实时切换 |
 | WPF | 异步编程 | 已完成 | 60 FPS UI 心跳/死锁对照、BoundedChannel 背压仿真、SemaphoreSlim 多设备并发泳道与联动取消 |
-| WPF | MVVM | 规划中 | 占位页面 |
+| WPF | MVVM | 已完成 | 零业务 Code-Behind：`ObservableValidator` 跨属性校验、`AsyncRelayCommand` 防重入/取消、`WeakReferenceMessenger` 双向解耦与数据流追踪 |
 | 协议 | Modbus / EtherCAT / MQTT | 规划中 | 占位页面 |
 | 运动控制 | 运动控制 | 已完成 | 单轴 HAL + PLCopen 状态机 + T/S 7 段规划示波；XY 双轴 PTP/G01/G02/G03 插补、示教配方与 PSO 飞拍 |
 

@@ -4,8 +4,377 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:mvvm="clr-namespace:LearnSmartManufacturing.Models.Mvvm"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:MvvmViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+             d:DesignHeight="800" d:DesignWidth="1140">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="BadgeBorder" TargetType="Border">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+
+        <Style x:Key="ValidatedTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                    <Setter Property="ToolTip"
+                            Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="16,12,16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Margin="0,0,0,8">
+            <TextBlock Text="WPF MVVM 实战工作台 · 验证、命令与弱引用消息总线" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock Text="零业务 Code-Behind（仅 InitializeComponent）：演示 ObservableValidator 跨属性校验、AsyncRelayCommand 防重入/取消、ObservableRecipient 与 WeakReferenceMessenger 解耦通信"
+                       Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- Live MVVM Data-Flow Diagram -->
+        <Border Grid.Row="1" Height="64" Margin="0,0,0,10" CornerRadius="8" ClipToBounds="True"
+                Background="{StaticResource CanvasBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+            <controls:MvvmFlowCanvas ActiveCategory="{Binding ActiveCategory, Mode=OneWay}"
+                                     LastEventText="{Binding LastEventText, Mode=OneWay}"
+                                     HasValidationErrors="{Binding Editor.HasErrors, Mode=OneWay}"
+                                     IsMonitorActive="{Binding Monitor.IsActive, Mode=OneWay}"
+                                     TracePulseCount="{Binding TracePulseCount, Mode=OneWay}" />
+        </Border>
+
+        <!-- Main 2-Column Workbench -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.1*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="0.9*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Column: RecipeEditorViewModel (ObservableValidator + AsyncRelayCommand) -->
+            <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel DataContext="{Binding Editor}" Margin="16,14">
+                        <DockPanel Margin="0,0,0,8">
+                            <Border DockPanel.Dock="Right" Style="{StaticResource BadgeBorder}" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DirtyBadgeText}" FontSize="11" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <StackPanel>
+                                <TextBlock Text="1. 工艺配方编辑器 (RecipeEditorViewModel)" Style="{StaticResource SectionTitle}" Margin="0" />
+                                <TextBlock Text="继承 ObservableValidator · 零直接引用右侧看板" Style="{StaticResource MetricLabel}" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Reverse alarm banner received via WeakReferenceMessenger -->
+                        <Border Margin="0,0,0,10" Padding="10,6" CornerRadius="6"
+                                Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                                Visibility="{Binding HasLineAlarm, Converter={StaticResource BoolToVisibility}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="忽略" Command="{Binding DismissLineAlarmCommand}"
+                                        Padding="8,1" FontSize="11" Margin="8,0,0,0" />
+                                <TextBlock Text="{Binding LastLineAlarmText}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                           TextWrapping="Wrap" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Validated Recipe Form -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="配方编号 (如 SMT-2026)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
+                                         Text="{Binding RecipeCode, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                         AutomationProperties.Name="配方编号" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="传送带速度 (10 ~ 120 mm/s)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
+                                         Text="{Binding ConveyorSpeedText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                         AutomationProperties.Name="传送带速度" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="目标炉温 (150 ~ 280 °C)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
+                                         Text="{Binding TargetTempText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                         AutomationProperties.Name="目标炉温" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="超温报警阈值 (须 ≥ 目标 + 10 °C)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
+                                         Text="{Binding AlarmTempText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                         AutomationProperties.Name="超温报警阈值" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Live Validation Summary -->
+                        <Border Padding="10,8" CornerRadius="6" Margin="0,0,0,10"
+                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ValidationStatusText}" FontSize="12" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding ErrorSummary}" Margin="0,4,0,0" FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                           Visibility="{Binding HasErrors, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Commands bar (AsyncRelayCommand + Generated CancelCommand + CanExecute) -->
+                        <UniformGrid Columns="4" Margin="0,0,0,4">
+                            <Button Content="下发配方" Command="{Binding DeployRecipeCommand}" Margin="0,0,4,0"
+                                    AutomationProperties.Name="下发配方" />
+                            <Button Content="取消下发" Command="{Binding DeployRecipeCancelCommand}" Margin="2,0"
+                                    AutomationProperties.Name="取消下发" />
+                            <Button Content="撤销修改" Command="{Binding RevertCommand}" Margin="2,0"
+                                    AutomationProperties.Name="撤销修改" />
+                            <Button Content="填非法值" Command="{Binding FillInvalidSampleCommand}" Margin="4,0,0,0"
+                                    AutomationProperties.Name="填入非法测试值" />
+                        </UniformGrid>
+                        <TextBlock Text="{Binding DeployProgressText}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" />
+
+                        <Separator Margin="0,12" />
+
+                        <!-- UpdateSourceTrigger Comparison -->
+                        <TextBlock Text="2. UpdateSourceTrigger 绑定时机对照" Style="{StaticResource SectionTitle}" />
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="PropertyChanged（逐字同步）" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <TextBox Text="{Binding LiveTriggerText, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Margin="0,3,0,0" FontFamily="Consolas" FontSize="11"
+                                           Foreground="{StaticResource CyanMetricBrush}"
+                                           Text="{Binding LiveTriggerText, StringFormat='VM 值: {0}'}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="LostFocus（失焦后同步）" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                <TextBox Text="{Binding LostFocusTriggerText, UpdateSourceTrigger=LostFocus}" />
+                                <TextBlock Margin="0,3,0,0" FontFamily="Consolas" FontSize="11"
+                                           Foreground="{StaticResource PurpleMetricBrush}"
+                                           Text="{Binding LostFocusTriggerText, StringFormat='VM 值: {0}'}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Separator Margin="0,10" />
+
+                        <!-- Saved Recipe History -->
+                        <TextBlock Text="3. 已下发历史版本（点击“载入”回填编辑）" Style="{StaticResource SectionTitle}" />
+                        <Border CornerRadius="6" BorderThickness="1" MaxHeight="140"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                            <ListBox ItemsSource="{Binding SavedRecipes}" Background="Transparent" BorderThickness="0"
+                                     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type mvvm:ProcessRecipe}">
+                                        <DockPanel Margin="0,2">
+                                            <Button DockPanel.Dock="Right" Content="载入" Padding="8,2" FontSize="11" Margin="8,0,0,0"
+                                                    Command="{Binding DataContext.Editor.LoadRecipeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <StackPanel>
+                                                <TextBlock FontFamily="Consolas" FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                                                    <Run Text="{Binding RecipeCode, Mode=OneWay}" />
+                                                    <Run Text="  " />
+                                                    <Run Text="{Binding Version, Mode=OneWay, StringFormat='v{0}'}" />
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding SummaryText}" FontSize="11"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Right Column: ProductionMonitorViewModel (ObservableRecipient) + MVVM Event Trace -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Decoupled Subscriber Card -->
+                <Border Grid.Row="0" Style="{StaticResource CompactCardStyle}" DataContext="{Binding Monitor}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <CheckBox DockPanel.Dock="Right" Content="激活订阅 (IsActive)" IsChecked="{Binding IsActive}"
+                                      VerticalAlignment="Center" AutomationProperties.Name="激活产线看板订阅" />
+                            <StackPanel>
+                                <TextBlock Text="4. 产线实时看板 (ProductionMonitorVM)" Style="{StaticResource SectionTitle}" Margin="0" />
+                                <TextBlock Text="{Binding SubscriptionStateText}" Style="{StaticResource MetricLabel}" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,10">
+                            <Border Margin="0,0,6,6" Padding="10,8" CornerRadius="6"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="当前运行配方" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ActiveRecipeCode}" Style="{StaticResource CompactMetricValue}"
+                                               Foreground="{StaticResource CyanMetricBrush}" />
+                                    <TextBlock Text="{Binding ActiveVersionText}" Style="{StaticResource MetricLabel}" FontFamily="Consolas" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="6,0,0,6" Padding="10,8" CornerRadius="6"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="目标温度 / 报警阈值" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Style="{StaticResource CompactMetricValue}"
+                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}">
+                                        <Run Text="{Binding ActiveTempText, Mode=OneWay}" />
+                                        <Run Text=" / " FontSize="13" />
+                                        <Run Text="{Binding ActiveAlarmTempText, Mode=OneWay}" FontSize="14" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding ActiveSpeedText, StringFormat='传送带 {0}'}" Style="{StaticResource MetricLabel}" FontFamily="Consolas" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="反向广播超温告警 →" Command="{Binding BroadcastOverTempAlarmCommand}"
+                                    AutomationProperties.Name="广播产线超温告警" />
+                            <TextBlock Text="{Binding LastSyncText}" Style="{StaticResource MetricLabel}"
+                                       VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- MVVM Runtime Event Trace -->
+                <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="14,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Content="清空追踪" Command="{Binding ClearTracesCommand}"
+                                    Padding="8,2" FontSize="11" />
+                            <TextBlock Text="5. MVVM 运行时事件流追踪（最新在前）" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                        </DockPanel>
+
+                        <ListBox Grid.Row="1" ItemsSource="{Binding Traces}" Background="Transparent" BorderThickness="0"
+                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="2,2" />
+                                    <Setter Property="Focusable" Value="False" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <ContentPresenter />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type mvvm:MvvmTraceEvent}">
+                                    <DockPanel Margin="0,1">
+                                        <TextBlock DockPanel.Dock="Left" Text="{Binding TimeText}" FontFamily="Consolas" FontSize="11"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,6,0" />
+                                        <TextBlock DockPanel.Dock="Left" Text="{Binding Category, StringFormat='[{0}]'}" FontFamily="Consolas" FontSize="11"
+                                                   FontWeight="SemiBold" Width="84">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Category}" Value="Validator">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Category}" Value="Command">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Category}" Value="Messenger">
+                                                            <Setter Property="Foreground" Value="{StaticResource PurpleMetricBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Detail}" FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
 </UserControl>
