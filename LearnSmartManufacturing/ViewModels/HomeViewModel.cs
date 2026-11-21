@@ -15,7 +15,7 @@ namespace LearnSmartManufacturing.ViewModels
         [
             new ModuleInfo("WPF", "异步编程、MVVM：构建响应流畅、结构清晰的上位机界面。"),
             new ModuleInfo("协议", "Modbus、EtherCAT、MQTT：设备通信与数据采集、上云。"),
-            new ModuleInfo("机器视觉", "工业相机：图像采集与视觉检测基础。"),
+            new ModuleInfo("机器视觉", "工业相机选型、镜头焦距与视场角光路、景深 (DOF) 与成像仿真。"),
             new ModuleInfo("运动控制", "轴运动与控制逻辑的上位机实现。"),
         ];
 

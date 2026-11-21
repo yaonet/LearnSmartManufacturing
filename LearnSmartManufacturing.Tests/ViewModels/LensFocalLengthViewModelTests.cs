@@ -1,0 +1,64 @@
+using LearnSmartManufacturing.ViewModels;
+
+namespace LearnSmartManufacturing.Tests.ViewModels
+{
+    public class LensFocalLengthViewModelTests
+    {
+        [Fact]
+        public void Defaults_UseConsistentTwoThirdsInchSensorWidth()
+        {
+            var vm = new LensFocalLengthViewModel();
+
+            Assert.Equal(8.45, vm.SensorWidth);
+            Assert.NotNull(vm.SelectedSensorPreset);
+            Assert.Equal(8.45, vm.SelectedSensorPreset.Width);
+            Assert.Equal("8.45", vm.SensorWidthText);
+            Assert.True(vm.HasResult);
+            Assert.Contains("16 mm", vm.NearestStandardText);
+        }
+
+        [Fact]
+        public void FocalLengthAndPreset_SynchronizeBidirectionally()
+        {
+            var vm = new LensFocalLengthViewModel();
+
+            vm.SelectedPreset = vm.Presets[3]; // 50 mm
+            Assert.Equal(50, vm.FocalLength);
+
+            vm.FocalLength = 21; // non-preset focal length
+            Assert.Null(vm.SelectedPreset);
+
+            vm.FocalLength = 25;
+            Assert.Equal(vm.Presets[2], vm.SelectedPreset);
+        }
+
+        [Fact]
+        public void SensorWidthTextAndPreset_SynchronizeBidirectionally()
+        {
+            var vm = new LensFocalLengthViewModel();
+
+            vm.SelectedSensorPreset = vm.SensorPresets[3]; // 1" (12.8 mm)
+            Assert.Equal("12.8", vm.SensorWidthText);
+
+            vm.SensorWidthText = "10.5";
+            Assert.Null(vm.SelectedSensorPreset);
+
+            vm.SensorWidthText = "6.4";
+            Assert.Equal(vm.SensorPresets[1], vm.SelectedSensorPreset);
+        }
+
+        [Fact]
+        public void InvalidCalculatorInput_ClearsResultAndShowsHint()
+        {
+            var vm = new LensFocalLengthViewModel
+            {
+                FovWidthText = "0",
+            };
+
+            Assert.False(vm.HasResult);
+            Assert.Equal("—", vm.ResultText);
+            Assert.Equal(string.Empty, vm.NearestStandardText);
+            Assert.Equal("请输入大于 0 的数值", vm.Hint);
+        }
+    }
+}

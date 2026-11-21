@@ -11,9 +11,27 @@ namespace LearnSmartManufacturing.Controls
             nameof(Result), typeof(DofResult), typeof(DofProfileCanvas),
             new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        private static readonly Pen TickPen = DofPalette.Pen(DofPalette.Solid("#2A2B3D"), 1);
+        private static readonly Pen EdgePen = DofPalette.Pen(DofPalette.Dof, 1.5, 3, 2);
+        private static readonly Pen CenterPen = DofPalette.Pen(DofPalette.Fov, 1.5);
+        private static readonly Pen AxisPen = DofPalette.Pen(DofPalette.Solid("#45475A"), 1);
+        private static readonly Pen WorkpieceInDofPen = DofPalette.Pen(DofPalette.Dof, 2);
+        private static readonly Pen WorkpieceOutDofPen = DofPalette.Pen(DofPalette.Warn, 2);
+        private static readonly Brush BandGradient = CreateBandGradient();
+
         public DofProfileCanvas()
         {
             ClipToBounds = true;
+        }
+
+        private static Brush CreateBandGradient()
+        {
+            var gradient = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+            gradient.GradientStops.Add(new GradientStop(Color.FromArgb(41, 166, 227, 161), 0));
+            gradient.GradientStops.Add(new GradientStop(Color.FromArgb(107, 166, 227, 161), 0.5));
+            gradient.GradientStops.Add(new GradientStop(Color.FromArgb(41, 166, 227, 161), 1));
+            gradient.Freeze();
+            return gradient;
         }
 
         public DofResult? Result
@@ -41,30 +59,23 @@ namespace LearnSmartManufacturing.Controls
             var rearFinite = double.IsFinite(r.RearDofMm);
             var farX = rearFinite ? Math.Min(w - padX, MapX(r.RearDofMm)) : w - padX;
 
-            var tickPen = DofPalette.Pen(DofPalette.Solid("#2A2B3D"), 1);
             for (var i = 0; i <= 4; i++)
             {
                 var x = padX + trackW * i / 4;
-                dc.DrawLine(tickPen, new Point(x, 14), new Point(x, h - 18));
+                dc.DrawLine(TickPen, new Point(x, 14), new Point(x, h - 18));
             }
 
             var bandW = Math.Max(2, farX - nearX);
-            var gradient = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
-            gradient.GradientStops.Add(new GradientStop(Color.FromArgb(41, 166, 227, 161), 0));
-            gradient.GradientStops.Add(new GradientStop(Color.FromArgb(107, 166, 227, 161), 0.5));
-            gradient.GradientStops.Add(new GradientStop(Color.FromArgb(41, 166, 227, 161), 1));
-            gradient.Freeze();
-            dc.DrawRectangle(gradient, null, new Rect(nearX, 16, bandW, h - 36));
+            dc.DrawRectangle(BandGradient, null, new Rect(nearX, 16, bandW, h - 36));
 
-            var edgePen = DofPalette.Pen(DofPalette.Dof, 1.5, 3, 2);
-            dc.DrawLine(edgePen, new Point(nearX, 14), new Point(nearX, h - 18));
+            dc.DrawLine(EdgePen, new Point(nearX, 14), new Point(nearX, h - 18));
             if (rearFinite && MapX(r.RearDofMm) <= w - padX)
             {
-                dc.DrawLine(edgePen, new Point(farX, 14), new Point(farX, h - 18));
+                dc.DrawLine(EdgePen, new Point(farX, 14), new Point(farX, h - 18));
             }
 
-            dc.DrawLine(DofPalette.Pen(DofPalette.Fov, 1.5), new Point(centerX, 12), new Point(centerX, h - 16));
-            dc.DrawLine(DofPalette.Pen(DofPalette.Solid("#45475A"), 1), new Point(padX, h - 18), new Point(w - padX, h - 18));
+            dc.DrawLine(CenterPen, new Point(centerX, 12), new Point(centerX, h - 16));
+            dc.DrawLine(AxisPen, new Point(padX, h - 18), new Point(w - padX, h - 18));
 
             DofText.Draw(dc, this, $"-{halfSpan:F1}", 10, DofPalette.Muted, padX, h - 5);
             DofText.Draw(dc, this, "WD(0)", 10, DofPalette.Fov, centerX, h - 5, TextAlign.Center);
@@ -76,7 +87,7 @@ namespace LearnSmartManufacturing.Controls
 
             var wpX = Math.Max(padX, Math.Min(w - padX, MapX(r.DeltaZMm)));
             var wpColor = r.IsInDof ? DofPalette.Dof : DofPalette.Warn;
-            dc.DrawLine(DofPalette.Pen(wpColor, 2), new Point(wpX, 14), new Point(wpX, h - 18));
+            dc.DrawLine(r.IsInDof ? WorkpieceInDofPen : WorkpieceOutDofPen, new Point(wpX, 14), new Point(wpX, h - 18));
 
             var diamond = new StreamGeometry();
             using (var g = diamond.Open())

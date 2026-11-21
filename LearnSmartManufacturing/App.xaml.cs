@@ -24,6 +24,7 @@ namespace LearnSmartManufacturing
                     services.AddSingleton<MainWindowViewModel>();
 
                     services.AddSingleton<INavigationService, NavigationService>();
+                    services.AddSingleton<IThemeService, ThemeService>();
                     services.AddTransient<HomeViewModel>();
                     services.AddTransient<SettingsViewModel>();
                     services.AddTransient<AsyncProgrammingViewModel>();
@@ -31,9 +32,9 @@ namespace LearnSmartManufacturing
                     services.AddTransient<ModbusViewModel>();
                     services.AddTransient<EtherCatViewModel>();
                     services.AddTransient<MqttViewModel>();
-                    services.AddTransient<IndustrialCameraViewModel>();
-                    services.AddTransient<LensFocalLengthViewModel>();
-                    services.AddTransient<CameraSimulationViewModel>();
+                    services.AddSingleton<IndustrialCameraViewModel>();
+                    services.AddSingleton<LensFocalLengthViewModel>();
+                    services.AddSingleton<CameraSimulationViewModel>();
                     services.AddTransient<MotionControlViewModel>();
                 })
                 .Build();

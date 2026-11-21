@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using LearnSmartManufacturing.Services;
 using System.Windows;
 
 namespace LearnSmartManufacturing.ViewModels
@@ -7,8 +8,11 @@ namespace LearnSmartManufacturing.ViewModels
 
     public partial class SettingsViewModel : ObservableObject
     {
-        public SettingsViewModel()
+        private readonly IThemeService _themeService;
+
+        public SettingsViewModel(IThemeService themeService)
         {
+            _themeService = themeService;
             ThemeOptions =
             [
                 new ThemeOption("跟随系统", ThemeMode.System),
@@ -16,8 +20,7 @@ namespace LearnSmartManufacturing.ViewModels
                 new ThemeOption("深色", ThemeMode.Dark),
             ];
 
-            // This view model is recreated on every navigation, so read the current theme back from the app.
-            var current = Application.Current.ThemeMode;
+            var current = _themeService.CurrentTheme;
             SelectedTheme = ThemeOptions.FirstOrDefault(o => o.Value == current) ?? ThemeOptions[0];
         }
 
@@ -30,17 +33,12 @@ namespace LearnSmartManufacturing.ViewModels
 
         partial void OnSelectedThemeChanged(ThemeOption? value)
         {
-            if (value is null)
+            if (value is null || value.Value == _themeService.CurrentTheme)
             {
                 return;
             }
 
-            var app = Application.Current;
-            app.ThemeMode = value.Value;
-            foreach (Window window in app.Windows)
-            {
-                window.ThemeMode = value.Value;
-            }
+            _themeService.SetTheme(value.Value);
         }
     }
 }

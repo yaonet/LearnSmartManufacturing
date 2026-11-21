@@ -64,6 +64,23 @@ namespace LearnSmartManufacturing.Models
 
         public static DofResult Compute(DofParameters p)
         {
+            ValidateFinitePositive(p.SensorWidthMm, nameof(p.SensorWidthMm));
+            ValidateFinitePositive(p.PixelSizeUm, nameof(p.PixelSizeUm));
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(p.ResX, nameof(p.ResX));
+            ValidateFinitePositive(p.FocalMm, nameof(p.FocalMm));
+            ValidateFinitePositive(p.WdMm, nameof(p.WdMm));
+            if (p.WdMm <= p.FocalMm)
+            {
+                throw new ArgumentOutOfRangeException(nameof(p.WdMm), p.WdMm, "Working distance must be greater than focal length.");
+            }
+
+            ValidateFinitePositive(p.FNumber, nameof(p.FNumber));
+            ValidateFinitePositive(p.CocMultiplier, nameof(p.CocMultiplier));
+            if (!double.IsFinite(p.DeltaZMm))
+            {
+                throw new ArgumentOutOfRangeException(nameof(p.DeltaZMm), p.DeltaZMm, "DeltaZ must be finite.");
+            }
+
             var h = p.SensorWidthMm;
             var f = p.FocalMm;
             var wd = p.WdMm;
@@ -71,13 +88,17 @@ namespace LearnSmartManufacturing.Models
             var cUm = p.PixelSizeUm * p.CocMultiplier;
             var cMm = cUm / 1000.0;
 
-            var fovMm = h * wd / f;
-            var fovAngleDeg = 2 * Math.Atan(h / 2.0 / f) * 180.0 / Math.PI;
+            // Exact thin-lens relations for finite working distance WD > f:
+            // v0 = f·WD / (WD - f), β = v0 / WD = f / (WD - f), FOV = h / β = h·(WD - f) / f.
+            var v0 = f * wd / (wd - f);
             var magnification = f / (wd - f);
+            var fovMm = h / magnification;
+            var fovAngleDeg = 2 * Math.Atan(h / (2.0 * v0)) * 180.0 / Math.PI;
             var pixelResUm = fovMm / p.ResX * 1000.0;
 
             var apertureMm = f / n;
-            var airyUm = 2.44 * WavelengthUm * n;
+            // Effective F-number at finite magnification: N_eff = N · (1 + β).
+            var airyUm = 2.44 * WavelengthUm * n * (1.0 + magnification);
 
             var hyperfocal = f * f / (n * cMm) + f;
             var near = wd * (hyperfocal - f) / (hyperfocal + wd - 2 * f);
@@ -90,7 +111,6 @@ namespace LearnSmartManufacturing.Models
 
             // Blur circle of a workpiece at s = WD + ΔZ while the sensor sits at the image distance of WD.
             var s = wd + p.DeltaZMm;
-            var v0 = f * wd / (wd - f);
             var v = double.PositiveInfinity;
             var actualCocUm = double.PositiveInfinity;
             var isVirtual = false;
@@ -134,6 +154,14 @@ namespace LearnSmartManufacturing.Models
                 IsVirtualImage = isVirtual,
                 IsInDof = !isVirtual && actualCocUm <= cUm + 1e-4,
             };
+        }
+
+        private static void ValidateFinitePositive(double value, string paramName)
+        {
+            if (!double.IsFinite(value) || value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(paramName, value, "Value must be finite and greater than zero.");
+            }
         }
     }
 }

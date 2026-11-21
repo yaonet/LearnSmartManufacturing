@@ -7,6 +7,10 @@
              ThemeMode="System">
     <Application.Resources>
         <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/CommonStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
             <!-- ViewModel -> View mappings used by the navigation host -->
             <DataTemplate DataType="{x:Type vm:HomeViewModel}">
                 <views:HomeView />

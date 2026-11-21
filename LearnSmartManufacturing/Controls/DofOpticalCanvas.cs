@@ -23,6 +23,59 @@ namespace LearnSmartManufacturing.Controls
             nameof(DeltaZLimitMm), typeof(double), typeof(DofOpticalCanvas), new PropertyMetadata(60.0));
 
         private static readonly Brush HatchBrush = CreateHatchBrush();
+        private static readonly Brush FovConeBrush = DofPalette.Solid("#89DCEB", 0.11);
+        private static readonly Brush SensorConeBrush = DofPalette.Solid("#A6E3A1", 0.13);
+        private static readonly Brush DofBoxBg = DofPalette.Solid("#141420", 0.85);
+        private static readonly Brush MarginalConeBrush = DofPalette.Solid("#CBA6F7", 0.16);
+        private static readonly Brush LensFillBrush = DofPalette.Solid("#89B4FA", 0.22);
+        private static readonly Brush WorkpieceDragBg = DofPalette.Solid("#28283D");
+        private static readonly Brush WorkpieceIdleBg = DofPalette.Solid("#1E1E2E", 0.94);
+        private static readonly Brush WorkpieceInDofHaloDrag = DofPalette.WithOpacity(DofPalette.Dof, 0.3);
+        private static readonly Brush WorkpieceInDofHaloHover = DofPalette.WithOpacity(DofPalette.Dof, 0.2);
+        private static readonly Brush WorkpieceOutDofHaloDrag = DofPalette.WithOpacity(DofPalette.Warn, 0.3);
+        private static readonly Brush WorkpieceOutDofHaloHover = DofPalette.WithOpacity(DofPalette.Warn, 0.2);
+        private static readonly Brush HudBg = DofPalette.Solid("#1E1E2E", 0.85);
+        private static readonly Brush ThinBadgeBg = DofPalette.Solid("#A6E3A1", 0.15);
+
+        private static readonly Pen ChiefRayPen = DofPalette.Pen(DofPalette.Ray, 1.8);
+        private static readonly Pen GridPen = DofPalette.Pen(DofPalette.Solid("#313244", 0.45), 1);
+        private static readonly Pen RulerPen = DofPalette.Pen(DofPalette.Surface, 1);
+        private static readonly Pen OpticalAxisPen = DofPalette.Pen(DofPalette.Solid("#585B70"), 1.2, 5, 5);
+        private static readonly Pen LensPlanePen = DofPalette.Pen(DofPalette.Solid("#45475A", 0.85), 1, 3, 4);
+        private static readonly Pen DofBoundaryPen = DofPalette.Pen(DofPalette.Dof, 1.4, 6, 4);
+        private static readonly Pen ThinDofGlowPen = DofPalette.Pen(DofPalette.Solid("#A6E3A1", 0.3), 9);
+        private static readonly Pen ThinDofCorePen = DofPalette.Pen(DofPalette.Dof, 2.5);
+        private static readonly Pen BracketPen = DofPalette.Pen(DofPalette.Dof, 1.5);
+        private static readonly Pen DofBoxBorderPen = DofPalette.Pen(DofPalette.Solid("#A6E3A1", 0.45), 1);
+        private static readonly Pen MarginalConePen = DofPalette.Pen(DofPalette.Solid("#CBA6F7", 0.72), 1.25, 4, 3);
+        private static readonly Pen InDofRayPen = DofPalette.Pen(DofPalette.WithOpacity(DofPalette.Dof, 0.9), 1.3);
+        private static readonly Pen OutDofRayPen = DofPalette.Pen(DofPalette.WithOpacity(DofPalette.Warn, 0.9), 1.3);
+        private static readonly Pen InDofSpotGlowPen = DofPalette.Pen(DofPalette.WithOpacity(DofPalette.Dof, 0.3), 11);
+        private static readonly Pen OutDofSpotGlowPen = DofPalette.Pen(DofPalette.WithOpacity(DofPalette.Warn, 0.3), 11);
+        private static readonly Pen InDofSpotCorePen = DofPalette.Pen(DofPalette.Dof, 5);
+        private static readonly Pen OutDofSpotCorePen = DofPalette.Pen(DofPalette.Warn, 5);
+        private static readonly Pen FovArcPen = DofPalette.Pen(DofPalette.Solid("#F9E2AF", 0.65), 1.2);
+        private static readonly Pen LensStrokePen = DofPalette.Pen(DofPalette.Accent, 1.8);
+        private static readonly Pen BladePen = DofPalette.Pen(DofPalette.Aperture, 1.5);
+        private static readonly Pen FovBarPen = CreateRoundPen(DofPalette.Fov, 5);
+        private static readonly Pen FovTickPen = DofPalette.Pen(DofPalette.Fov, 2);
+        private static readonly Pen SensorBarPen = DofPalette.Pen(DofPalette.Dof, 6);
+        private static readonly Pen SensorFramePen = DofPalette.Pen(DofPalette.Solid("#585B70"), 1.5);
+        private static readonly Pen WorkpieceInDofLinePen = DofPalette.Pen(DofPalette.WithOpacity(DofPalette.Dof, 0.5), 1.2, 2, 3);
+        private static readonly Pen WorkpieceOutDofLinePen = DofPalette.Pen(DofPalette.WithOpacity(DofPalette.Warn, 0.6), 1.2, 2, 3);
+        private static readonly Pen WorkpieceInDofBorderDrag = DofPalette.Pen(DofPalette.Dof, 2.5);
+        private static readonly Pen WorkpieceInDofBorderIdle = DofPalette.Pen(DofPalette.Dof, 1.8);
+        private static readonly Pen WorkpieceOutDofBorderDrag = DofPalette.Pen(DofPalette.Warn, 2.5);
+        private static readonly Pen WorkpieceOutDofBorderIdle = DofPalette.Pen(DofPalette.Warn, 1.8);
+        private static readonly Pen HudBorderPen = DofPalette.Pen(DofPalette.Surface, 1);
+        private static readonly Pen ThinBadgeBorderPen = DofPalette.Pen(DofPalette.Solid("#A6E3A1", 0.4), 1);
+
+        private static Pen CreateRoundPen(Brush brush, double thickness)
+        {
+            var pen = new Pen(brush, thickness) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+            pen.Freeze();
+            return pen;
+        }
 
         private double _lensY;
         private double _sObj = 1;
@@ -177,11 +230,16 @@ namespace LearnSmartManufacturing.Controls
                 return;
             }
 
-            // Object space fits WD = 500 mm, image space fits f = 50 mm; the two scales are independent.
+            // Object space fits WD = 500 mm, image space fits v0 = 50 mm; if v0 exceeds maxImgPx (close-up),
+            // scale image space down independently — chief rays remain collinear through O because FOV / WD = h / v0.
             var sObj = maxObjPx / 500.0;
             var sImg = maxImgPx / 50.0;
+            if (r.BestImageDistanceMm * sImg > maxImgPx)
+            {
+                sImg = maxImgPx / r.BestImageDistanceMm;
+            }
 
-            // A wide FOV shrinks both spaces by the same factor so the chief rays stay collinear.
+            // A wide FOV shrinks both spaces by the same factor to preserve their relative scale.
             var halfFovPx = r.FovMm / 2 * sObj;
             var maxHalfWidth = Math.Max(80, w / 2 - 72);
             if (halfFovPx > maxHalfWidth)
@@ -193,11 +251,11 @@ namespace LearnSmartManufacturing.Controls
             }
 
             var wdPx = r.WdMm * sObj;
-            var fPx = r.FocalMm * sImg;
+            var v0Px = r.BestImageDistanceMm * sImg;
             var halfSensorPx = r.SensorWidthMm / 2 * sImg;
 
             var yWd = lensY - wdPx;
-            var ySensor = lensY + fPx;
+            var ySensor = lensY + v0Px;
             var yWorkpiece = Math.Max(16, Math.Min(lensY - 14, lensY - r.ObjectDistanceMm * sObj));
 
             var yNear = lensY - r.NearLimitMm * sObj;
@@ -213,20 +271,19 @@ namespace LearnSmartManufacturing.Controls
             DrawDofBand(dc, w, cx, lensY, yWd, yNear, yFar, isFarClipped, dofPx, halfFovPx, r);
 
             // Object-space and image-space field cones
-            dc.DrawGeometry(DofPalette.Solid("#89DCEB", 0.11), null, Triangle(cx, lensY, cx - halfFovPx, yWd, cx + halfFovPx, yWd));
-            dc.DrawGeometry(DofPalette.Solid("#A6E3A1", 0.13), null, Triangle(cx, lensY, cx - halfSensorPx, ySensor, cx + halfSensorPx, ySensor));
+            dc.DrawGeometry(FovConeBrush, null, Triangle(cx, lensY, cx - halfFovPx, yWd, cx + halfFovPx, yWd));
+            dc.DrawGeometry(SensorConeBrush, null, Triangle(cx, lensY, cx - halfSensorPx, ySensor, cx + halfSensorPx, ySensor));
 
             // The aperture opening narrows as the F-number grows.
             var lensHalfW = Math.Min(72, Math.Max(48, w * 0.08));
             var apertureRatio = Math.Max(0.08, Math.Min(0.88, 1.35 / r.FNumber));
             var apertureHalf = Math.Max(4, lensHalfW * apertureRatio);
 
-            DrawMarginalRays(dc, cx, lensY, yWd, ySensor, yWorkpiece, fPx, apertureHalf, r);
+            DrawMarginalRays(dc, cx, lensY, yWd, ySensor, yWorkpiece, v0Px, apertureHalf, r);
 
             // Chief rays through O
-            var chiefPen = DofPalette.Pen(DofPalette.Ray, 1.8);
-            dc.DrawLine(chiefPen, new Point(cx - halfFovPx, yWd), new Point(cx + halfSensorPx, ySensor));
-            dc.DrawLine(chiefPen, new Point(cx + halfFovPx, yWd), new Point(cx - halfSensorPx, ySensor));
+            dc.DrawLine(ChiefRayPen, new Point(cx - halfFovPx, yWd), new Point(cx + halfSensorPx, ySensor));
+            dc.DrawLine(ChiefRayPen, new Point(cx + halfFovPx, yWd), new Point(cx - halfSensorPx, ySensor));
 
             DrawFovArc(dc, cx, lensY, halfFovPx, wdPx, r.FovAngleDeg);
             DrawLensAndBlades(dc, cx, lensY, lensHalfW, apertureHalf, r);
@@ -237,20 +294,18 @@ namespace LearnSmartManufacturing.Controls
 
         private void DrawBackground(DrawingContext dc, double w, double h, double cx, double lensY, double sObj)
         {
-            var gridPen = DofPalette.Pen(DofPalette.Solid("#313244", 0.45), 1);
             const double step = 36;
             for (var x = cx % step; x < w; x += step)
             {
-                dc.DrawLine(gridPen, new Point(x, 0), new Point(x, h));
+                dc.DrawLine(GridPen, new Point(x, 0), new Point(x, h));
             }
 
             for (var y = lensY % step; y < h; y += step)
             {
-                dc.DrawLine(gridPen, new Point(0, y), new Point(w, y));
+                dc.DrawLine(GridPen, new Point(0, y), new Point(w, y));
             }
 
             // Object-space ruler (distance from the lens in mm)
-            var rulerPen = DofPalette.Pen(DofPalette.Surface, 1);
             for (var mm = 0; mm <= 500; mm += 50)
             {
                 var y = lensY - mm * sObj;
@@ -260,15 +315,15 @@ namespace LearnSmartManufacturing.Controls
                 }
 
                 var major = mm % 100 == 0;
-                dc.DrawLine(rulerPen, new Point(0, y), new Point(major ? 14 : 7, y));
+                dc.DrawLine(RulerPen, new Point(0, y), new Point(major ? 14 : 7, y));
                 if (major && mm > 0)
                 {
                     DofText.Draw(dc, this, $"{mm}mm", 10, DofPalette.Subtle, 18, y + 3);
                 }
             }
 
-            dc.DrawLine(DofPalette.Pen(DofPalette.Solid("#585B70"), 1.2, 5, 5), new Point(cx, 12), new Point(cx, h - 12));
-            dc.DrawLine(DofPalette.Pen(DofPalette.Solid("#45475A", 0.85), 1, 3, 4), new Point(16, lensY), new Point(w - 16, lensY));
+            dc.DrawLine(OpticalAxisPen, new Point(cx, 12), new Point(cx, h - 12));
+            dc.DrawLine(LensPlanePen, new Point(16, lensY), new Point(w - 16, lensY));
         }
 
         private void DrawDofBand(DrawingContext dc, double w, double cx, double lensY, double yWd, double yNear, double yFar,
@@ -277,13 +332,12 @@ namespace LearnSmartManufacturing.Controls
             var bandLeft = Math.Max(58, cx - Math.Max(halfFovPx + 36, 130));
             var bandRight = Math.Min(w - 36, cx + Math.Max(halfFovPx + 36, 130));
             var bandW = bandRight - bandLeft;
-            var dofPen = DofPalette.Pen(DofPalette.Dof, 1.4, 6, 4);
 
             if (dofPx < 3)
             {
                 // A very thin DOF is drawn as a glowing line at the focus plane.
-                dc.DrawLine(DofPalette.Pen(DofPalette.Solid("#A6E3A1", 0.3), 9), new Point(bandLeft, yWd), new Point(bandRight, yWd));
-                dc.DrawLine(DofPalette.Pen(DofPalette.Dof, 2.5), new Point(bandLeft, yWd), new Point(bandRight, yWd));
+                dc.DrawLine(ThinDofGlowPen, new Point(bandLeft, yWd), new Point(bandRight, yWd));
+                dc.DrawLine(ThinDofCorePen, new Point(bandLeft, yWd), new Point(bandRight, yWd));
             }
             else
             {
@@ -298,10 +352,10 @@ namespace LearnSmartManufacturing.Controls
                 dc.DrawRectangle(gradient, null, band);
                 dc.DrawRectangle(HatchBrush, null, band);
 
-                dc.DrawLine(dofPen, new Point(bandLeft, yNear), new Point(bandRight, yNear));
+                dc.DrawLine(DofBoundaryPen, new Point(bandLeft, yNear), new Point(bandRight, yNear));
                 if (!isFarClipped)
                 {
-                    dc.DrawLine(dofPen, new Point(bandLeft, yFar), new Point(bandRight, yFar));
+                    dc.DrawLine(DofBoundaryPen, new Point(bandLeft, yFar), new Point(bandRight, yFar));
                 }
                 else
                 {
@@ -330,10 +384,9 @@ namespace LearnSmartManufacturing.Controls
 
             var bTop = dofPx < 3 ? yWd - 2 : yFar;
             var bBot = dofPx < 3 ? yWd + 2 : yNear;
-            var bracketPen = DofPalette.Pen(DofPalette.Dof, 1.5);
-            dc.DrawLine(bracketPen, new Point(bracketX + 6, bTop), new Point(bracketX, bTop));
-            dc.DrawLine(bracketPen, new Point(bracketX, bTop), new Point(bracketX, bBot));
-            dc.DrawLine(bracketPen, new Point(bracketX, bBot), new Point(bracketX + 6, bBot));
+            dc.DrawLine(BracketPen, new Point(bracketX + 6, bTop), new Point(bracketX, bTop));
+            dc.DrawLine(BracketPen, new Point(bracketX, bTop), new Point(bracketX, bBot));
+            dc.DrawLine(BracketPen, new Point(bracketX, bBot), new Point(bracketX + 6, bBot));
 
             var midY = (bTop + bBot) / 2;
             var dofLabel = double.IsFinite(r.TotalDofMm) ? $"DOF {r.TotalDofMm:F1}mm" : "DOF ∞";
@@ -348,14 +401,14 @@ namespace LearnSmartManufacturing.Controls
             var finalX = fitsLeft ? boxX : bandLeft + 6;
             var finalY = fitsLeft ? boxY : Math.Max(42, yWd + 16);
 
-            dc.DrawRectangle(DofPalette.Solid("#141420", 0.85), DofPalette.Pen(DofPalette.Solid("#A6E3A1", 0.45), 1),
+            dc.DrawRectangle(DofBoxBg, DofBoxBorderPen,
                 new Rect(finalX - 2, finalY - 11, textW, 28));
             DofText.Draw(dc, this, dofLabel, 11, DofPalette.Dof, finalX + 3, finalY, bold: true);
             DofText.Draw(dc, this, detailLabel, 10, DofPalette.TextMain, finalX + 3, finalY + 13);
         }
 
         private void DrawMarginalRays(DrawingContext dc, double cx, double lensY, double yWd, double ySensor, double yWorkpiece,
-            double fPx, double apertureHalf, DofResult r)
+            double v0Px, double apertureHalf, DofResult r)
         {
             // Focus-plane point -> aperture edge -> sensor center
             var cone = new StreamGeometry();
@@ -368,13 +421,12 @@ namespace LearnSmartManufacturing.Controls
             }
 
             cone.Freeze();
-            dc.DrawGeometry(DofPalette.Solid("#CBA6F7", 0.16), null, cone);
+            dc.DrawGeometry(MarginalConeBrush, null, cone);
 
-            var conePen = DofPalette.Pen(DofPalette.Solid("#CBA6F7", 0.72), 1.25, 4, 3);
-            dc.DrawLine(conePen, new Point(cx, yWd), new Point(cx - apertureHalf, lensY));
-            dc.DrawLine(conePen, new Point(cx - apertureHalf, lensY), new Point(cx, ySensor));
-            dc.DrawLine(conePen, new Point(cx, yWd), new Point(cx + apertureHalf, lensY));
-            dc.DrawLine(conePen, new Point(cx + apertureHalf, lensY), new Point(cx, ySensor));
+            dc.DrawLine(MarginalConePen, new Point(cx, yWd), new Point(cx - apertureHalf, lensY));
+            dc.DrawLine(MarginalConePen, new Point(cx - apertureHalf, lensY), new Point(cx, ySensor));
+            dc.DrawLine(MarginalConePen, new Point(cx, yWd), new Point(cx + apertureHalf, lensY));
+            dc.DrawLine(MarginalConePen, new Point(cx + apertureHalf, lensY), new Point(cx, ySensor));
 
             if (Math.Abs(r.DeltaZMm) <= 0.1 || r.IsVirtualImage)
             {
@@ -382,22 +434,21 @@ namespace LearnSmartManufacturing.Controls
             }
 
             // Rays from the displaced workpiece converge before/after the sensor and spread into a blur spot on it.
-            var color = r.IsInDof ? DofPalette.Dof : DofPalette.Warn;
             var focusRatio = r.ImageDistanceMm / r.BestImageDistanceMm;
-            var yActualFocus = lensY + fPx * Math.Max(0.25, Math.Min(2.2, focusRatio));
+            var yActualFocus = lensY + v0Px * Math.Max(0.25, Math.Min(2.2, focusRatio));
             var t = (ySensor - lensY) / (yActualFocus - lensY);
             var xLeft = cx - apertureHalf * (1 - t);
             var xRight = cx + apertureHalf * (1 - t);
 
-            var rayPen = DofPalette.Pen(DofPalette.WithOpacity(color, 0.9), 1.3);
+            var rayPen = r.IsInDof ? InDofRayPen : OutDofRayPen;
             dc.DrawLine(rayPen, new Point(cx, yWorkpiece), new Point(cx - apertureHalf, lensY));
             dc.DrawLine(rayPen, new Point(cx - apertureHalf, lensY), new Point(xLeft, ySensor));
             dc.DrawLine(rayPen, new Point(cx, yWorkpiece), new Point(cx + apertureHalf, lensY));
             dc.DrawLine(rayPen, new Point(cx + apertureHalf, lensY), new Point(xRight, ySensor));
 
             var spotHalf = Math.Max(2, Math.Abs(xRight - xLeft) / 2);
-            dc.DrawLine(DofPalette.Pen(DofPalette.WithOpacity(color, 0.3), 11), new Point(cx - spotHalf, ySensor), new Point(cx + spotHalf, ySensor));
-            dc.DrawLine(DofPalette.Pen(color, 5), new Point(cx - spotHalf, ySensor), new Point(cx + spotHalf, ySensor));
+            dc.DrawLine(r.IsInDof ? InDofSpotGlowPen : OutDofSpotGlowPen, new Point(cx - spotHalf, ySensor), new Point(cx + spotHalf, ySensor));
+            dc.DrawLine(r.IsInDof ? InDofSpotCorePen : OutDofSpotCorePen, new Point(cx - spotHalf, ySensor), new Point(cx + spotHalf, ySensor));
         }
 
         private void DrawFovArc(DrawingContext dc, double cx, double lensY, double halfFovPx, double wdPx, double fovAngleDeg)
@@ -420,7 +471,7 @@ namespace LearnSmartManufacturing.Controls
             }
 
             arc.Freeze();
-            dc.DrawGeometry(null, DofPalette.Pen(DofPalette.Solid("#F9E2AF", 0.65), 1.2), arc);
+            dc.DrawGeometry(null, FovArcPen, arc);
             DofText.Draw(dc, this, $"2θ={fovAngleDeg:F1}°", 10, DofPalette.Ray, cx, lensY - radius - 5, TextAlign.Center);
         }
 
@@ -436,15 +487,14 @@ namespace LearnSmartManufacturing.Controls
             }
 
             lens.Freeze();
-            dc.DrawGeometry(DofPalette.Solid("#89B4FA", 0.22), DofPalette.Pen(DofPalette.Accent, 1.8), lens);
+            dc.DrawGeometry(LensFillBrush, LensStrokePen, lens);
 
             // Left and right aperture blades
             var bladeOuterX = lensHalfW + 10;
             const double bladeThickness = 8;
-            var bladePen = DofPalette.Pen(DofPalette.Aperture, 1.5);
             var bladeW = bladeOuterX - apertureHalf;
-            dc.DrawRoundedRectangle(DofPalette.Surface, bladePen, new Rect(cx - bladeOuterX, lensY - bladeThickness / 2, bladeW, bladeThickness), 2, 2);
-            dc.DrawRoundedRectangle(DofPalette.Surface, bladePen, new Rect(cx + apertureHalf, lensY - bladeThickness / 2, bladeW, bladeThickness), 2, 2);
+            dc.DrawRoundedRectangle(DofPalette.Surface, BladePen, new Rect(cx - bladeOuterX, lensY - bladeThickness / 2, bladeW, bladeThickness), 2, 2);
+            dc.DrawRoundedRectangle(DofPalette.Surface, BladePen, new Rect(cx + apertureHalf, lensY - bladeThickness / 2, bladeW, bladeThickness), 2, 2);
 
             DofText.Draw(dc, this, $"光圈 F{r.FNumber:F1} (D={r.ApertureDiameterMm:F1}mm)", 11, DofPalette.Aperture,
                 cx + bladeOuterX + 8, lensY + 4, bold: true);
@@ -456,21 +506,19 @@ namespace LearnSmartManufacturing.Controls
             double halfFovPx, double halfSensorPx, DofResult r)
         {
             // FOV bar at the focus plane
-            var fovPen = new Pen(DofPalette.Fov, 5) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
-            dc.DrawLine(fovPen, new Point(cx - halfFovPx, yWd), new Point(cx + halfFovPx, yWd));
-            var tickPen = DofPalette.Pen(DofPalette.Fov, 2);
-            dc.DrawLine(tickPen, new Point(cx - halfFovPx, yWd - 6), new Point(cx - halfFovPx, yWd + 6));
-            dc.DrawLine(tickPen, new Point(cx + halfFovPx, yWd - 6), new Point(cx + halfFovPx, yWd + 6));
+            dc.DrawLine(FovBarPen, new Point(cx - halfFovPx, yWd), new Point(cx + halfFovPx, yWd));
+            dc.DrawLine(FovTickPen, new Point(cx - halfFovPx, yWd - 6), new Point(cx - halfFovPx, yWd + 6));
+            dc.DrawLine(FovTickPen, new Point(cx + halfFovPx, yWd - 6), new Point(cx + halfFovPx, yWd + 6));
             DofText.Draw(dc, this, $"最佳对焦面 · FOV = {r.FovMm:F1} mm", 12, DofPalette.Fov, cx, Math.Max(18, yWd - 12), TextAlign.Center, bold: true);
 
             // Sensor chip
-            dc.DrawLine(DofPalette.Pen(DofPalette.Dof, 6), new Point(cx - halfSensorPx, ySensor), new Point(cx + halfSensorPx, ySensor));
-            dc.DrawRectangle(null, DofPalette.Pen(DofPalette.Solid("#585B70"), 1.5),
+            dc.DrawLine(SensorBarPen, new Point(cx - halfSensorPx, ySensor), new Point(cx + halfSensorPx, ySensor));
+            dc.DrawRectangle(null, SensorFramePen,
                 new Rect(cx - halfSensorPx - 6, ySensor - 4, halfSensorPx * 2 + 12, 12));
             DofText.Draw(dc, this, $"CMOS 传感器靶面 h = {r.SensorWidthMm:F2} mm", 12, DofPalette.Dof, cx, ySensor + 24, TextAlign.Center, bold: true);
 
             DofText.Draw(dc, this, $"WD = {r.WdMm:F0} mm", 11, DofPalette.Ray, cx + 10, (yWd + lensY) / 2 + 12);
-            DofText.Draw(dc, this, $"f = {r.FocalMm:F1} mm", 11, DofPalette.Dof, cx + 10, (lensY + ySensor) / 2 + 4);
+            DofText.Draw(dc, this, $"v₀ = {r.BestImageDistanceMm:F1} mm (f={r.FocalMm:F1})", 11, DofPalette.Dof, cx + 10, (lensY + ySensor) / 2 + 4);
         }
 
         private void DrawWorkpiece(DrawingContext dc, double cx, double yWorkpiece, DofResult r)
@@ -482,17 +530,22 @@ namespace LearnSmartManufacturing.Controls
             var y = yWorkpiece - pillH / 2;
             _workpieceHit = new Rect(x - 12, y - 10, pillW + 24, pillH + 20);
 
-            dc.DrawLine(DofPalette.Pen(DofPalette.WithOpacity(color, r.IsInDof ? 0.5 : 0.6), 1.2, 2, 3),
+            dc.DrawLine(r.IsInDof ? WorkpieceInDofLinePen : WorkpieceOutDofLinePen,
                 new Point(cx - 90, yWorkpiece), new Point(cx + 90, yWorkpiece));
 
             if (_dragging || _hover)
             {
-                dc.DrawRoundedRectangle(DofPalette.WithOpacity(color, _dragging ? 0.3 : 0.2), null,
-                    new Rect(x - 4, y - 4, pillW + 8, pillH + 8), 17, 17);
+                var halo = r.IsInDof
+                    ? (_dragging ? WorkpieceInDofHaloDrag : WorkpieceInDofHaloHover)
+                    : (_dragging ? WorkpieceOutDofHaloDrag : WorkpieceOutDofHaloHover);
+                dc.DrawRoundedRectangle(halo, null, new Rect(x - 4, y - 4, pillW + 8, pillH + 8), 17, 17);
             }
 
-            dc.DrawRoundedRectangle(_dragging ? DofPalette.Solid("#28283D") : DofPalette.Solid("#1E1E2E", 0.94),
-                DofPalette.Pen(color, _dragging ? 2.5 : 1.8), new Rect(x, y, pillW, pillH), 13, 13);
+            var borderPen = r.IsInDof
+                ? (_dragging ? WorkpieceInDofBorderDrag : WorkpieceInDofBorderIdle)
+                : (_dragging ? WorkpieceOutDofBorderDrag : WorkpieceOutDofBorderIdle);
+            dc.DrawRoundedRectangle(_dragging ? WorkpieceDragBg : WorkpieceIdleBg,
+                borderPen, new Rect(x, y, pillW, pillH), 13, 13);
 
             DofText.Draw(dc, this, "↕", 12, color, x + 9, yWorkpiece + 4, bold: true);
             var sign = r.DeltaZMm > 0 ? "+" : string.Empty;
@@ -505,7 +558,7 @@ namespace LearnSmartManufacturing.Controls
             var info = $"物方 1mm={sObj:F2}px · 像方放大 {sImg / Math.Max(0.001, sObj):F1}×";
             var titleW = DofText.Measure(this, title, 11, true);
             var infoW = DofText.Measure(this, info, 11);
-            dc.DrawRoundedRectangle(DofPalette.Solid("#1E1E2E", 0.85), DofPalette.Pen(DofPalette.Surface, 1),
+            dc.DrawRoundedRectangle(HudBg, HudBorderPen,
                 new Rect(12, 12, titleW + infoW + 28, 24), 8, 8);
             DofText.Draw(dc, this, title, 11, DofPalette.Ray, 22, 28, bold: true);
             DofText.Draw(dc, this, info, 11, DofPalette.Muted, 22 + titleW + 8, 28);
@@ -514,7 +567,7 @@ namespace LearnSmartManufacturing.Controls
             {
                 var badge = "景深极薄（屏幕厚度 < 3px），请查看右侧局部放大剖面 ↗";
                 var badgeW = DofText.Measure(this, badge, 11);
-                dc.DrawRoundedRectangle(DofPalette.Solid("#A6E3A1", 0.15), DofPalette.Pen(DofPalette.Solid("#A6E3A1", 0.4), 1),
+                dc.DrawRoundedRectangle(ThinBadgeBg, ThinBadgeBorderPen,
                     new Rect(12, 42, badgeW + 20, 24), 8, 8);
                 DofText.Draw(dc, this, badge, 11, DofPalette.Dof, 22, 58);
             }

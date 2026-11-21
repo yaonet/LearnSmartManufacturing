@@ -34,6 +34,7 @@ namespace LearnSmartManufacturing.ViewModels
 
         private DofResult _result = null!;
         private double _blurPx;
+        private bool _isBatchUpdating;
 
         public CameraSimulationViewModel()
         {
@@ -99,7 +100,7 @@ namespace LearnSmartManufacturing.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(InsetToggleText))]
-        public partial bool IsInsetExpanded { get; set; } = true;
+        public partial bool IsInsetExpanded { get; set; } = false;
 
         public string Heading => "相机仿真";
 
@@ -223,18 +224,27 @@ namespace LearnSmartManufacturing.ViewModels
 
         private void ApplyDefaults()
         {
-            SelectedSensor = Sensors[1];
-            FocalMm = DefaultFocalMm;
-            WdMm = DefaultWdMm;
-            FNumber = DefaultFNumber;
-            CocMultiplier = DefaultCocMultiplier;
-            DeltaZMm = 0;
+            _isBatchUpdating = true;
+            try
+            {
+                SelectedSensor = Sensors[1];
+                FocalMm = DefaultFocalMm;
+                WdMm = DefaultWdMm;
+                FNumber = DefaultFNumber;
+                CocMultiplier = DefaultCocMultiplier;
+                DeltaZMm = 0;
+            }
+            finally
+            {
+                _isBatchUpdating = false;
+            }
+
             Recompute();
         }
 
         private void Recompute()
         {
-            if (SelectedSensor is null)
+            if (_isBatchUpdating || SelectedSensor is null)
             {
                 return;
             }

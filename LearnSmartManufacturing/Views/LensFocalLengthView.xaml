@@ -9,39 +9,15 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="760">
     <UserControl.Resources>
-        <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="20,16" />
+        <Style x:Key="SectionCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
             <Setter Property="Margin" Value="0,0,0,16" />
-        </Style>
-
-        <Style x:Key="MetricLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-            <Setter Property="FontSize" Value="12" />
-        </Style>
-
-        <Style x:Key="MetricValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="28" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,4" />
-        </Style>
-
-        <Style x:Key="SliderBadge" TargetType="TextBlock">
-            <Setter Property="Width" Value="44" />
-            <Setter Property="TextAlignment" Value="Right" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="FontFamily" Value="Consolas" />
-            <Setter Property="FontSize" Value="16" />
         </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24" MaxWidth="900">
             <!-- Header and live metrics -->
-            <Border Style="{StaticResource CardStyle}">
+            <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel>
                     <TextBlock Text="镜头焦距与视场角 (FOV) 相似三角形光路" FontSize="20" FontWeight="SemiBold" />
                     <TextBlock Margin="0,4,0,16" TextWrapping="Wrap"
@@ -86,7 +62,7 @@
             </Border>
 
             <!-- Optical path -->
-            <Border Style="{StaticResource CardStyle}">
+            <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel>
                     <DockPanel Margin="4,0,4,12" LastChildFill="False">
                         <TextBlock DockPanel.Dock="Right" Text="{Binding LensCategory}" FontSize="12"
@@ -129,7 +105,7 @@
             </Border>
 
             <!-- Controls -->
-            <Border Style="{StaticResource CardStyle}">
+            <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,8">
                         <TextBlock DockPanel.Dock="Left" Text="镜头焦距 f (mm)" VerticalAlignment="Center" />
@@ -176,7 +152,7 @@
             </Border>
 
             <!-- Focal length calculator -->
-            <Border Style="{StaticResource CardStyle}" Margin="0">
+            <Border Style="{StaticResource CardStyle}">
                 <StackPanel>
                     <TextBlock Text="焦距计算器" FontSize="20" FontWeight="SemiBold" />
                     <TextBlock Margin="0,4,0,16" TextWrapping="Wrap"
