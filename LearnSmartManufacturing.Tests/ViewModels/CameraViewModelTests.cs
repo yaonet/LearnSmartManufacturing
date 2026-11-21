@@ -82,5 +82,20 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             Assert.Equal("—", vm.ResolutionText);
             Assert.Contains("超出", vm.Hint);
         }
+
+        [Fact]
+        public void ScenarioPresets_UpdateVignettingAndBandwidthReactiveOutputs()
+        {
+            var vm = new CameraViewModel();
+
+            var vignettePreset = vm.ScenarioPresets.Single(p => p.Name.Contains("暗角"));
+            vm.ApplyScenarioPresetCommand.Execute(vignettePreset);
+            Assert.True(vm.HasVignetting);
+
+            var pcbPreset = vm.ScenarioPresets.Single(p => p.Name.Contains("PCB"));
+            vm.ApplyScenarioPresetCommand.Execute(pcbPreset);
+            Assert.False(vm.HasVignetting);
+            Assert.StartsWith("10GigE", vm.RecommendedInterfaceText);
+        }
     }
 }

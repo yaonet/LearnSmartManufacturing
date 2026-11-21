@@ -4,93 +4,603 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:vision="clr-namespace:LearnSmartManufacturing.Models.Vision"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:CameraViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="760">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Border Style="{StaticResource CardStyle}" Margin="24" MaxWidth="900" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="相机选型计算器" FontSize="20" FontWeight="SemiBold" />
-                <TextBlock Margin="0,4,0,16" TextWrapping="Wrap"
-                           Text="输入像素精度与检测目标的长、宽，反推所需的相机分辨率与像素数"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
 
-                <Grid>
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="19" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="CompactSliderBadge" TargetType="TextBlock" BasedOn="{StaticResource SliderBadge}">
+            <Setter Property="Width" Value="78" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="PresetChipButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="Margin" Value="0,0,6,4" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,3.5" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border CornerRadius="10" Padding="10,4" BorderThickness="1" Margin="0,0,8,0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                    <TextBlock Text="{Binding LensCompatibilityText, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasVignetting}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+                <Button Content="恢复默认" Command="{Binding ResetDefaultsCommand}" Padding="10,4" FontSize="11.5" />
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="机器视觉 · 工业相机选型、靶面像圆匹配与快门/带宽实验室" FontSize="19" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ActiveScenarioHint, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Shared Industrial Scenario Presets Strip -->
+        <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,7" Margin="0,0,0,8">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="典型选型场景：" VerticalAlignment="Center" Margin="0,0,8,0"
+                           Style="{StaticResource MetricLabel}" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding ScenarioPresets}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vision:CameraScenarioPreset}">
+                            <Button Style="{StaticResource PresetChipButton}"
+                                    Command="{Binding DataContext.ApplyScenarioPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <TextBlock>
+                                    <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" />
+                                    <Run Text=" · " Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <Run Text="{Binding Tag, Mode=OneWay}" Foreground="{StaticResource CyanMetricBrush}" />
+                                </TextBlock>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Tabs -->
+        <TabControl Grid.Row="2">
+            <!-- Tab 1: Resolution Selection, Sensor Footprint & Lens Image-Circle Matching -->
+            <TabItem Header="分辨率选型 &amp; 靶面像圆匹配">
+                <Grid Margin="4,10,4,4">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition />
+                        <ColumnDefinition Width="340" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="像素精度 a (mm/px)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding PixelAccuracyText, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="像素精度 (毫米每像素)" />
-                    </StackPanel>
+                    <!-- Left Parameter & Formula Panel -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="视野与精度输入" Style="{StaticResource SectionTitle}" />
 
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="目标长度 L (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding TargetLengthText, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="目标长度 (毫米)" />
-                    </StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="像素精度 a (mm/px)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <TextBox Text="{Binding PixelAccuracyText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                                 AutomationProperties.Name="像素精度 (毫米每像素)" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="目标长度 L (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <TextBox Text="{Binding TargetLengthText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                                 AutomationProperties.Name="目标长度 (毫米)" />
+                                    </StackPanel>
+                                </Grid>
 
-                    <StackPanel Grid.Column="4">
-                        <TextBlock Text="目标宽度 W (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
-                        <TextBox Text="{Binding TargetWidthText, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="目标宽度 (毫米)" />
-                    </StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="目标宽度 W (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <TextBox Text="{Binding TargetWidthText, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas"
+                                                 AutomationProperties.Name="目标宽度 (毫米)" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <DockPanel Margin="0,0,0,3">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding FovMarginText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                                       Foreground="{StaticResource CyanMetricBrush}" />
+                                            <TextBlock Text="视野余量" Style="{StaticResource MetricLabel}" />
+                                        </DockPanel>
+                                        <Slider Minimum="0" Maximum="30" Value="{Binding FovMarginPercent}"
+                                                TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                                                AutomationProperties.Name="视野安全余量百分比" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="{Binding Hint, Mode=OneWay}" Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                           FontSize="11.5" TextWrapping="Wrap" Margin="0,0,0,6">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasResult}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <Separator Margin="0,4,0,10" />
+
+                                <TextBlock Text="镜头最大像圆匹配（检验暗角 Vignetting）" Style="{StaticResource SectionTitle}" />
+                                <ComboBox ItemsSource="{Binding LensImageCircles}" SelectedItem="{Binding SelectedLensCircle}"
+                                          DisplayMemberPath="Name" Margin="0,0,0,6" AutomationProperties.Name="镜头最大像圆" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                           Text="铁律：镜头最大像圆直径必须 ≥ 相机靶面对角线（如 2/3″ 相机配 1/2″ 镜头会出现明显四角暗角）。" />
+
+                                <Separator Margin="0,0,0,10" />
+
+                                <!-- Formula & Substitution Card -->
+                                <Border CornerRadius="6" Padding="10,8"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="分辨率推导公式" Style="{StaticResource SectionTitle}" FontSize="12" />
+                                        <TextBlock Text="Nx = ⌈L / a⌉   Ny = ⌈W / a⌉   N = Nx × Ny" FontFamily="Consolas" FontSize="11.5"
+                                                   Foreground="{StaticResource CyanMetricBrush}" Margin="0,0,0,4" />
+                                        <TextBlock Text="{Binding Substitution, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5"
+                                                   TextWrapping="Wrap" Margin="0,0,0,6" />
+                                        <TextBlock Text="{Binding RecommendationText, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SystemFillColorSuccessBrush}" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                           Text="工程经验：检出最小缺陷需占 3~4 px；亚像素尺寸测量按 0.25 px 精度折算；实际视野建议留 10%~20% 来料公差余量。" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right KPI Cards + Sensor Canvas + Standard Camera Catalog Table -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="1.12*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="0.88*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- 4 KPI Cards -->
+                        <UniformGrid Grid.Row="0" Columns="4">
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="所需最低分辨率" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ResolutionText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                               Foreground="{StaticResource CyanMetricBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="理论所需像素数" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding PixelCountText, Mode=OneWay}" FontFamily="Consolas" FontSize="13.5" FontWeight="SemiBold"
+                                               Margin="0,5,0,0" TextWrapping="Wrap" Foreground="{StaticResource PurpleMetricBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="推荐面阵型号" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding RecommendedCardText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    <TextBlock Text="{Binding RecommendedSubText, Mode=OneWay}" Style="{StaticResource MetricLabel}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                <StackPanel>
+                                    <TextBlock Text="镜头像圆匹配" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding LensCompatibilityText, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" FontWeight="Bold"
+                                               Margin="0,4,0,0" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasVignetting}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Visual Sensor Active Area & Lens Image Circle Vignetting Canvas -->
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:CameraSensorCanvas VisualData="{Binding VisualData, Mode=OneWay}" />
+                        </Border>
+
+                        <!-- Standard Industrial CMOS Camera Catalog -->
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Grid.Row="0" Margin="0,0,0,4">
+                                    <TextBlock DockPanel.Dock="Right" Text="★ 绿色高亮为当前最小满足型号（支持 90° 旋转适配）"
+                                               Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                    <TextBlock Text="主流工业面阵相机选型对照库 (Sony Pregius / Gpixel)" Style="{StaticResource SectionTitle}" Margin="0" />
+                                </DockPanel>
+
+                                <Grid Grid.Row="1" Margin="6,0,6,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="68" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="82" />
+                                        <ColumnDefinition Width="52" />
+                                        <ColumnDefinition Width="88" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="级别" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="1" Text="分辨率" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="2" Text="代表芯片" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="3" Text="靶面 / 像元" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="4" Text="快门类型" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="5" Text="帧率" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Grid.Column="6" Text="常见接口" Style="{StaticResource MetricLabel}" />
+                                </Grid>
+
+                                <ListBox Grid.Row="2" ItemsSource="{Binding CatalogRows}" Style="{StaticResource DarkSafeListBox}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:CameraCatalogRow}">
+                                            <Border Padding="6,4" Margin="0,1" CornerRadius="4">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="Transparent" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsRecommended}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                <Setter Property="BorderThickness" Value="1" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="68" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="1.1*" />
+                                                        <ColumnDefinition Width="1.2*" />
+                                                        <ColumnDefinition Width="82" />
+                                                        <ColumnDefinition Width="52" />
+                                                        <ColumnDefinition Width="88" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" FontFamily="Consolas" FontSize="11" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding Spec.Name, Mode=OneWay}" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding FitsRequirement}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource CyanMetricBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsRecommended}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Spec.ResolutionText, Mode=OneWay}" FontFamily="Consolas" FontSize="11" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Spec.SensorModel, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding Spec.PhysicalSpecText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding Spec.ShutterText, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Spec.Shutter}" Value="{x:Static vision:ShutterKind.Global}">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="5" FontFamily="Consolas" FontSize="10.5">
+                                                        <Run Text="{Binding Spec.MaxFps, Mode=OneWay}" /><Run Text="fps" />
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="6" Text="{Binding Spec.PrimaryInterface, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5"
+                                                               Foreground="{StaticResource PurpleMetricBrush}" TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Grid>
+            </TabItem>
 
-                <Border Margin="0,16,0,0" Padding="20,16" CornerRadius="8"
-                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
-                    <StackPanel>
+            <!-- Tab 2: Global vs Rolling Shutter Distortion & Data Interface Bandwidth Calculator -->
+            <TabItem Header="全局/卷帘快门仿真 &amp; 接口带宽计算">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.02*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="0.98*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Global vs Rolling Shutter Lab -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="14,12">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="215" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                            <StackPanel>
-                                <TextBlock Text="所需相机分辨率 (长 × 宽)" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding ResolutionText}" Style="{StaticResource MetricValue}" />
+                            <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                                <TextBlock Text="全局快门 (Global) vs 卷帘快门 (Rolling) 运动畸变实验室" Style="{StaticResource SectionTitle}" FontSize="15" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                           Text="高速运动场景若误选 Rolling 快门，由于传感器逐行曝光/读出存在数毫秒时间差，垂直工件会产生明显果冻斜切变形。" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="所需像素数" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding PixelCountText}" Style="{StaticResource MetricValue}" FontSize="20"
-                                           TextWrapping="Wrap" Margin="0,10,0,4" />
+                            <Border Grid.Row="1" CornerRadius="8" ClipToBounds="True" Margin="0,0,0,10"
+                                    Background="{StaticResource CanvasBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                <controls:ShutterCompareCanvas Result="{Binding ShutterResult, Mode=OneWay}" />
+                            </Border>
+
+                            <!-- Shutter Controls -->
+                            <StackPanel Grid.Row="2" Margin="0,0,0,8">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding ShutterSpeedText, Mode=OneWay}" />
+                                    <TextBlock Text="工件运动线速度 v" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="0" Maximum="2000" Value="{Binding ShutterLineSpeedMmPerS}" TickFrequency="50" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding ShutterExposureText, Mode=OneWay}" />
+                                    <TextBlock Text="曝光时间 Exposure (影响水平拖影)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="20" Maximum="1000" Value="{Binding ShutterExposureUs}" TickFrequency="20" IsSnapToTickEnabled="True" Margin="0,2,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding RollingReadoutText, Mode=OneWay}" />
+                                    <TextBlock Text="卷帘整帧逐行读出耗时 T_readout" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="2" Maximum="30" Value="{Binding RollingReadoutMs}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,2,0,6" />
                             </StackPanel>
+
+                            <!-- Shutter Diagnostic Box -->
+                            <Border Grid.Row="3" CornerRadius="6" Padding="10,8"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <StackPanel>
+                                    <UniformGrid Columns="2" Margin="0,0,0,6">
+                                        <StackPanel>
+                                            <TextBlock Text="曝光运动拖影 (两类快门共有)" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding MotionBlurBadgeText, Mode=OneWay}" FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                                                       Foreground="{StaticResource CyanMetricBrush}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="卷帘果冻斜切偏移 (Skew)" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding RollingSkewBadgeText, Mode=OneWay}" FontFamily="Consolas" FontSize="15" FontWeight="Bold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsRollingAcceptable}" Value="True">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <TextBlock Text="{Binding ShutterResult.GlobalSummary, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}" Margin="0,0,0,3" />
+                                    <TextBlock Text="{Binding ShutterResult.RollingSummary, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRollingAcceptable}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
                         </Grid>
+                    </Border>
 
-                        <TextBlock Text="{Binding Hint}" Foreground="{DynamicResource SystemFillColorCriticalBrush}" FontSize="12" TextWrapping="Wrap">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasResult}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="{Binding RecommendationText}" FontSize="12" Margin="0,4,0,4" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <!-- Right: Data Bandwidth & 5 Industrial Interfaces Evaluator -->
+                    <Border Grid.Column="2" Style="{StaticResource CompactCardStyle}" Padding="14,12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                        <Separator Margin="0,8" />
+                            <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                                <TextBlock Text="图像数据带宽与工业相机接口选型计算" Style="{StaticResource SectionTitle}" FontSize="15" />
+                                <TextBlock Style="{StaticResource MetricLabel}" TextWrapping="Wrap"
+                                           Text="根据分辨率、像素位深与目标帧率计算真实数据吞吐量 (MB/s)，核对 GigE / USB3 / 5GigE / 10GigE / CoaXPress 负载上限。" />
+                            </StackPanel>
 
-                        <TextBlock Text="计算公式" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="Nx = L / a　　Ny = W / a　　N = Nx × Ny" FontFamily="Consolas" FontSize="16" Margin="0,4,0,0" />
-                        <TextBlock Text="{Binding Substitution}" FontFamily="Consolas" FontSize="16" Margin="0,4,0,0"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Margin="0,8,0,0" FontSize="12" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Text="像素精度 a 是单个像素对应的实际尺寸 (mm/px)；目标长度 L、宽度 W 即需要完整拍入视野的范围，各方向所需像素数向上取整。结果为理论最小值，未计入视野余量，实际选型建议再留 10%～20% 余量。" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </Border>
-    </ScrollViewer>
+                            <!-- Bandwidth Inputs -->
+                            <StackPanel Grid.Row="1" Margin="0,0,0,8">
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="相机分辨率规格" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <ComboBox ItemsSource="{Binding StandardCameras}" SelectedItem="{Binding SelectedBandwidthCamera}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="带宽评估相机型号" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="像素格式 (Bytes/Pixel)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <ComboBox ItemsSource="{Binding PixelFormatOptions}" SelectedItem="{Binding SelectedPixelFormat}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="像素格式" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding TargetFpsText, Mode=OneWay}" />
+                                    <TextBlock Text="目标工作帧率 (FPS)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Minimum="1" Maximum="240" Value="{Binding TargetFps}" TickFrequency="5" IsSnapToTickEnabled="True" Margin="0,2,0,4" />
+                            </StackPanel>
+
+                            <!-- Bandwidth KPI Strip -->
+                            <Border Grid.Row="2" CornerRadius="6" Padding="10,8" Margin="0,0,0,10"
+                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                <StackPanel>
+                                    <UniformGrid Columns="3" Margin="0,0,0,4">
+                                        <StackPanel>
+                                            <TextBlock Text="所需数据带宽" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding RequiredMBpsText, Mode=OneWay}" FontFamily="Consolas" FontSize="17" FontWeight="Bold"
+                                                       Foreground="{StaticResource CyanMetricBrush}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="等效比特率" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding RequiredGbpsText, Mode=OneWay}" FontFamily="Consolas" FontSize="17" FontWeight="Bold"
+                                                       Foreground="{StaticResource PurpleMetricBrush}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="最低满足接口" Style="{StaticResource MetricLabel}" />
+                                            <TextBlock Text="{Binding RecommendedInterfaceText, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" FontWeight="Bold"
+                                                       Margin="0,3,0,0" Foreground="{DynamicResource SystemFillColorSuccessBrush}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <TextBlock Text="{Binding BandwidthFormulaText, Mode=OneWay}" FontFamily="Consolas" FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 5 Industrial Interfaces Load Table -->
+                            <ItemsControl Grid.Row="3" ItemsSource="{Binding InterfaceRows}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vision:InterfaceBandwidthRow}">
+                                        <Border Padding="9,6" Margin="0,0,0,6" CornerRadius="6"
+                                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,3">
+                                                    <TextBlock DockPanel.Dock="Right" FontFamily="Consolas" FontSize="11" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsSupported}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                        <Run Text="{Binding LoadText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding StatusText, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock FontFamily="Consolas" FontSize="11.5" FontWeight="SemiBold">
+                                                        <Run Text="{Binding Name, Mode=OneWay}" />
+                                                        <Run Text=" (" Foreground="{DynamicResource TextFillColorSecondaryBrush}" /><Run Text="{Binding CeilingText, Mode=OneWay}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" /><Run Text=")" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                    </TextBlock>
+                                                </DockPanel>
+                                                <ProgressBar Height="6" Minimum="0" Maximum="100" Value="{Binding ClampedLoadPercent, Mode=OneWay}" Margin="0,0,0,3" />
+                                                <TextBlock Text="{Binding EngineeringNote, Mode=OneWay}" FontSize="10.5"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Grid.Row="4" Style="{StaticResource MetricLabel}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                       Text="面试考点：千兆网 GigE 理论 125 MB/s，扣除 UDP/GVSP 协议头后有效上限约 110~115 MB/s；工程上常通过开启 Jumbo Frame (9000B 巨型帧)、Mono8/ROI 裁剪或升级 5GigE/10GigE 避免丢包。" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
 </UserControl>
