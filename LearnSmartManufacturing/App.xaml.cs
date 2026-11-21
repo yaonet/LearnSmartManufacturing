@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using System.Windows;
 using LearnSmartManufacturing.Services;
+using LearnSmartManufacturing.Services.Motion;
 using LearnSmartManufacturing.ViewModels;
 
 namespace LearnSmartManufacturing
@@ -35,6 +36,8 @@ namespace LearnSmartManufacturing
                     services.AddSingleton<IndustrialCameraViewModel>();
                     services.AddSingleton<LensFocalLengthViewModel>();
                     services.AddSingleton<CameraSimulationViewModel>();
+                    services.AddScoped<IMotionAxis>(_ => new SimulatedMotionAxis());
+                    services.AddScoped<IXyMotionStage>(_ => new SimulatedXyMotionStage());
                     services.AddTransient<MotionControlViewModel>();
                 })
                 .Build();

@@ -4,8 +4,848 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:motion="clr-namespace:LearnSmartManufacturing.Models.Motion"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
              d:DataContext="{d:DesignInstance Type=vm:MotionControlViewModel}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="600">
-    <TextBlock Text="{Binding Heading}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" />
+             d:DesignHeight="800" d:DesignWidth="1160">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="PosMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="ErrMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+        <SolidColorBrush x:Key="LedOffBrush" Color="#6C7086" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,2" />
+        </Style>
+
+        <Style x:Key="MetricNote" TargetType="TextBlock" BasedOn="{StaticResource MetricLabel}">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="CompactSliderBadge" TargetType="TextBlock" BasedOn="{StaticResource SliderBadge}">
+            <Setter Property="Width" Value="86" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style x:Key="IoChipBorder" TargetType="Border">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+
+        <Style x:Key="LedDot" TargetType="Ellipse">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Fill" Value="{StaticResource LedOffBrush}" />
+        </Style>
+
+        <Style x:Key="StateBadgeBorder" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.Standstill}">
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.DiscreteMotion}">
+                    <Setter Property="BorderBrush" Value="{StaticResource PosMetricBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.ContinuousMotion}">
+                    <Setter Property="BorderBrush" Value="{StaticResource PosMetricBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.Homing}">
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.Stopping}">
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.ErrorStop}">
+                    <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="StateBadgeText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.Standstill}">
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.DiscreteMotion}">
+                    <Setter Property="Foreground" Value="{StaticResource PosMetricBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.ContinuousMotion}">
+                    <Setter Property="Foreground" Value="{StaticResource PosMetricBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.Homing}">
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static motion:AxisState.ErrorStop}">
+                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="EmergencyStopButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#C42B1C" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#9E1F13" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <DataTemplate x:Key="LogEntryTemplate" DataType="{x:Type motion:MotionLogEntry}">
+            <DockPanel Margin="0,1">
+                <TextBlock DockPanel.Dock="Left" Text="{Binding TimeText}" FontFamily="Consolas" FontSize="11"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,8,0" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Level, StringFormat='[{0}]'}" FontFamily="Consolas" FontSize="11"
+                           FontWeight="SemiBold" Width="54">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="Warn">
+                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding Message}" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <Style x:Key="LogListBoxStyle" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemTemplate" Value="{StaticResource LogEntryTemplate}" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="2,1" />
+                        <Setter Property="Focusable" Value="False" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <TabControl Margin="12,8,12,12">
+        <!-- Tab 1: Single-axis PLCopen State Machine & P-V-A-J Oscilloscope -->
+        <TabItem Header="单轴状态机 &amp; T/S 规划">
+            <Grid Margin="4,10,4,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Header + PLCopen state badge + E-Stop -->
+                <DockPanel Margin="0,0,0,8">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource StateBadgeBorder}" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StateDisplay}" Style="{StaticResource StateBadgeText}"
+                                       AutomationProperties.Name="轴状态机当前状态" />
+                        </Border>
+                        <Button Content="急停 E-Stop" Command="{Binding EmergencyStopCommand}"
+                                Style="{StaticResource EmergencyStopButton}" Padding="14,6"
+                                AutomationProperties.Name="急停按钮" />
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="单轴伺服运动控制 · 状态机与 T/S 加减速规划" FontSize="19" FontWeight="SemiBold" />
+                        <TextBlock Text="硬件抽象层 (IMotionAxis) + 200 Hz 伺服仿真：PLCopen 状态机、安全互锁、回零、JOG 点动与 7 段 S 曲线实时示波"
+                                   Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Industrial IO & sensor indicator bar -->
+                <Border Grid.Row="1" Style="{StaticResource CompactCardStyle}" Padding="10,6" Margin="0,0,0,10">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding AlarmBannerText}"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Visibility="{Binding HasAlarm, Converter={StaticResource BoolToVisibility}}" />
+
+                        <WrapPanel VerticalAlignment="Center">
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsServoOn}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="ServoOn" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsHomed}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="Homed" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsInPosition}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="InPos" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsMoving}" Value="True">
+                                                        <Setter Property="Fill" Value="{StaticResource PosMetricBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="Moving" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding NegativeLimit}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="-EL" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding OriginSensor}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="ORG" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PositiveLimit}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="+EL" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource IoChipBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse" BasedOn="{StaticResource LedDot}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasAlarm}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="Alarm" FontFamily="Consolas" FontSize="11" />
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Main split layout -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="336" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Control Panel -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="伺服控制与回零" Style="{StaticResource SectionTitle}" />
+                                <UniformGrid Columns="3" Margin="0,0,0,6">
+                                    <Button Content="使能 On" Command="{Binding ServoOnCommand}" Margin="0,0,4,0"
+                                            AutomationProperties.Name="伺服使能" />
+                                    <Button Content="断使能 Off" Command="{Binding ServoOffCommand}" Margin="2,0"
+                                            AutomationProperties.Name="伺服断使能" />
+                                    <Button Content="清报警" Command="{Binding ResetAlarmCommand}" Margin="4,0,0,0"
+                                            AutomationProperties.Name="清除报警" />
+                                </UniformGrid>
+                                <UniformGrid Columns="2" Margin="0,0,0,8">
+                                    <Button Content="执行回零 (Home)" Command="{Binding HomeCommand}" Margin="0,0,4,0"
+                                            AutomationProperties.Name="执行回零" />
+                                    <Button Content="平滑停止 (Stop)" Command="{Binding StopCommand}" Margin="4,0,0,0"
+                                            AutomationProperties.Name="平滑停止" />
+                                </UniformGrid>
+
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="92" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="回零模式" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <ComboBox ItemsSource="{Binding HomingModes}" SelectedItem="{Binding SelectedHomingMode}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="回零模式" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="脉冲当量 (/mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <TextBox Text="{Binding PulsePerMmText, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.Name="脉冲当量" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Separator Margin="0,10" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding JogVelocityText}" />
+                                    <TextBlock Text="JOG 点动（按住走 / 松开停）" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,4,0,6" Minimum="5" Maximum="150" Value="{Binding JogVelocityMmPerSec}"
+                                        TickFrequency="5" IsSnapToTickEnabled="True" AutomationProperties.Name="JOG 点动速度" />
+                                <UniformGrid Columns="2">
+                                    <Button x:Name="JogNegButton" Content="◀  JOG -" Margin="0,0,4,0"
+                                            PreviewMouseLeftButtonDown="JogNegButton_PreviewMouseLeftButtonDown"
+                                            PreviewMouseLeftButtonUp="JogButton_PreviewMouseLeftButtonUp"
+                                            LostMouseCapture="JogButton_LostMouseCapture"
+                                            AutomationProperties.Name="负向点动" />
+                                    <Button x:Name="JogPosButton" Content="JOG +  ▶" Margin="4,0,0,0"
+                                            PreviewMouseLeftButtonDown="JogPosButton_PreviewMouseLeftButtonDown"
+                                            PreviewMouseLeftButtonUp="JogButton_PreviewMouseLeftButtonUp"
+                                            LostMouseCapture="JogButton_LostMouseCapture"
+                                            AutomationProperties.Name="正向点动" />
+                                </UniformGrid>
+
+                                <Separator Margin="0,10" />
+
+                                <TextBlock Text="点位定位与加减速规划" Style="{StaticResource SectionTitle}" />
+                                <ComboBox ItemsSource="{Binding ProfileOptions}" SelectedItem="{Binding SelectedProfile}"
+                                          DisplayMemberPath="Name" AutomationProperties.Name="加减速曲线类型" />
+                                <CheckBox Content="叠加显示另一曲线以对比冲击与耗时" IsChecked="{Binding ShowComparison}" Margin="0,6,0,8" />
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="绝对目标位置 (mm，需先回零)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <TextBox Text="{Binding TargetPositionText, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.Name="绝对目标位置" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="绝对定位 Abs" VerticalAlignment="Bottom"
+                                            Command="{Binding MoveAbsoluteCommand}" AutomationProperties.Name="执行绝对定位" />
+                                </Grid>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="相对步距 (mm)" Style="{StaticResource MetricLabel}" Margin="0,0,0,3" />
+                                        <TextBox Text="{Binding RelativeStepText, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.Name="相对步距" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="Rel -" VerticalAlignment="Bottom"
+                                            Command="{Binding MoveRelativeNegativeCommand}" AutomationProperties.Name="负向相对定位" />
+                                    <Button Grid.Column="4" Content="Rel +" VerticalAlignment="Bottom"
+                                            Command="{Binding MoveRelativePositiveCommand}" AutomationProperties.Name="正向相对定位" />
+                                </Grid>
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding MaxVelocityText}" />
+                                    <TextBlock Text="最大速度 Vmax" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="10" Maximum="300" Value="{Binding MaxVelocityMmPerSec}"
+                                        TickFrequency="10" IsSnapToTickEnabled="True" AutomationProperties.Name="最大速度" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding MaxAccelerationText}" />
+                                    <TextBlock Text="最大加速度 Amax" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="50" Maximum="2000" Value="{Binding MaxAccelerationMmPerSec2}"
+                                        TickFrequency="50" IsSnapToTickEnabled="True" AutomationProperties.Name="最大加速度" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding MaxJerkMmPerSec3Text}" />
+                                    <TextBlock Text="加加速度 Jmax (S曲线)" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="200" Maximum="10000" Value="{Binding MaxJerkMmPerSec3}"
+                                        TickFrequency="200" IsSnapToTickEnabled="True" AutomationProperties.Name="最大加加速度" />
+
+                                <Separator Margin="0,10" />
+
+                                <TextBlock Text="故障注入（演练报警与安全互锁）" Style="{StaticResource SectionTitle}" />
+                                <UniformGrid Columns="2" IsEnabled="{Binding CanInjectFault}">
+                                    <Button Content="模拟 -EL 限位" Command="{Binding InjectNegativeLimitCommand}" Margin="0,0,4,4" />
+                                    <Button Content="模拟 +EL 限位" Command="{Binding InjectPositiveLimitCommand}" Margin="4,0,0,4" />
+                                    <Button Content="跟随误差超限" Command="{Binding InjectFollowingErrorCommand}" Margin="0,0,4,0" />
+                                    <Button Content="伺服驱动报警" Command="{Binding InjectServoFaultCommand}" Margin="4,0,0,0" />
+                                </UniformGrid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right Telemetry + Track + Oscilloscope + Event Log -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="118" />
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="0" Rows="1" Columns="4">
+                            <UniformGrid.Resources>
+                                <Style TargetType="Border" BasedOn="{StaticResource CompactCardStyle}">
+                                    <Setter Property="Margin" Value="0,0,8,0" />
+                                </Style>
+                            </UniformGrid.Resources>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="规划位置 Command" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding CommandPosText}" Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource PosMetricBrush}"
+                                               AutomationProperties.Name="规划位置" />
+                                    <TextBlock Text="{Binding CommandPulseText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="反馈位置 Actual" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ActualPosText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                               AutomationProperties.Name="反馈位置" />
+                                    <TextBlock Text="{Binding PulseEquivText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="跟随误差 Following Error" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding FollowingErrorText}" Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource ErrMetricBrush}"
+                                               AutomationProperties.Name="跟随误差" />
+                                    <TextBlock Text="{Binding FollowingErrorMmText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="实时速度 Velocity" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding VelocityText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                               AutomationProperties.Name="实时速度" />
+                                    <TextBlock Text="{Binding PlanSummaryText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Border Grid.Row="2" Height="64" CornerRadius="8" ClipToBounds="True"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:AxisTrackCanvas CommandPositionMm="{Binding CommandPositionMm}"
+                                                      ActualPositionMm="{Binding ActualPositionMm}"
+                                                      TargetPositionMm="{Binding TargetPositionMm}"
+                                                      HardNegativeLimitMm="{Binding HardNegativeLimitMm, Mode=OneWay}"
+                                                      HardPositiveLimitMm="{Binding HardPositiveLimitMm, Mode=OneWay}"
+                                                      SoftNegativeLimitMm="{Binding SoftNegativeLimitMm, Mode=OneWay}"
+                                                      SoftPositiveLimitMm="{Binding SoftPositiveLimitMm, Mode=OneWay}"
+                                                      PositiveLimit="{Binding PositiveLimit}"
+                                                      NegativeLimit="{Binding NegativeLimit}"
+                                                      OriginSensor="{Binding OriginSensor}"
+                                                      IsHomed="{Binding IsHomed}"
+                                                      IsAlarm="{Binding HasAlarm}" />
+                        </Border>
+
+                        <Border Grid.Row="4" CornerRadius="8" ClipToBounds="True" MinHeight="220"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:MotionProfileCanvas PrimaryPlan="{Binding PrimaryPlan, Mode=OneWay}"
+                                                          ComparisonPlan="{Binding ComparisonPlan, Mode=OneWay}"
+                                                          ShowComparison="{Binding ShowComparison, Mode=OneWay}"
+                                                          CurrentTimeSec="{Binding PlaybackTimeSec, Mode=OneWay}" />
+                        </Border>
+
+                        <Border Grid.Row="6" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,4">
+                                    <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearLogsCommand}"
+                                            Padding="8,1" FontSize="11" AutomationProperties.Name="清空运动日志" />
+                                    <TextBlock Text="单轴事件日志（最新在前）" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding Logs}" Style="{StaticResource LogListBoxStyle}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </TabItem>
+
+        <!-- Tab 2: 2D XY Gantry Interpolation, Teach Points & PSO Fly-Capture -->
+        <TabItem Header="XY 双轴插补 &amp; PSO 飞拍">
+            <Grid DataContext="{Binding XyStage}" Margin="4,10,4,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- XY Header -->
+                <DockPanel Margin="0,0,0,10">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource StateBadgeBorder}" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StateDisplay}" Style="{StaticResource StateBadgeText}"
+                                       AutomationProperties.Name="XY平台当前状态" />
+                        </Border>
+                        <Button Content="XY 急停" Command="{Binding EmergencyStopCommand}"
+                                Style="{StaticResource EmergencyStopButton}" Padding="14,6"
+                                AutomationProperties.Name="XY平台急停按钮" />
+                    </StackPanel>
+
+                    <StackPanel>
+                        <TextBlock Text="XY 双轴插补工作台 · 点位示教与 PSO 位置比较飞拍" FontSize="19" FontWeight="SemiBold" />
+                        <TextBlock Text="对比独立 PTP、直线插补 (G01)、顺/逆圆弧插补 (G02/G03)，演示 AOI 定点停拍与不停顿等距 PSO 飞拍节拍差异"
+                                   Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="356" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left XY Control & Teach Table Panel -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="14,12">
+                                <TextBlock Text="XY 伺服与复位" Style="{StaticResource SectionTitle}" />
+                                <UniformGrid Columns="3" Margin="0,0,0,6">
+                                    <Button Content="使能 On" Command="{Binding ServoOnCommand}" Margin="0,0,4,0" />
+                                    <Button Content="断使能 Off" Command="{Binding ServoOffCommand}" Margin="2,0" />
+                                    <Button Content="清报警" Command="{Binding ResetAlarmCommand}" Margin="4,0,0,0" />
+                                </UniformGrid>
+                                <UniformGrid Columns="2">
+                                    <Button Content="XY 回零 (0,0)" Command="{Binding HomeCommand}" Margin="0,0,4,0" />
+                                    <Button Content="停止 (Stop)" Command="{Binding StopCommand}" Margin="4,0,0,0" />
+                                </UniformGrid>
+
+                                <Separator Margin="0,10" />
+
+                                <TextBlock Text="插补参数与单步定位" Style="{StaticResource SectionTitle}" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="118" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding ModeOptions}" SelectedItem="{Binding SelectedMode}"
+                                              DisplayMemberPath="Name" AutomationProperties.Name="XY运动模式" />
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding ProfileOptions}" SelectedItem="{Binding SelectedProfile}"
+                                              DisplayMemberPath="Name" AutomationProperties.Name="XY速度曲线" />
+                                </Grid>
+
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="目标 X (0..200)" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                        <TextBox Text="{Binding TargetXText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="XY目标X" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="目标 Y (0..150)" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                        <TextBox Text="{Binding TargetYText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="XY目标Y" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="圆弧 R (0自动)" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                        <TextBox Text="{Binding ArcRadiusText, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsArcMode}" AutomationProperties.Name="圆弧半径" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding FeedVelocityText}" />
+                                    <TextBlock Text="合成进给速度 F" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,4" Minimum="20" Maximum="300" Value="{Binding FeedVelocityMmPerSec}"
+                                        TickFrequency="10" IsSnapToTickEnabled="True" AutomationProperties.Name="合成进给速度" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding MaxAccelText}" />
+                                    <TextBlock Text="插补加速度 Amax" Style="{StaticResource MetricLabel}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,6" Minimum="100" Maximum="2000" Value="{Binding MaxAccelerationMmPerSec2}"
+                                        TickFrequency="50" IsSnapToTickEnabled="True" AutomationProperties.Name="插补加速度" />
+
+                                <!-- PSO Fly-Capture Controls -->
+                                <DockPanel Margin="0,2,0,2">
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource CompactSliderBadge}" Text="{Binding PsoIntervalText}" />
+                                    <CheckBox Content="启用 PSO 位置比较飞拍（等距触发）" IsChecked="{Binding PsoEnabled}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Slider Margin="0,2,0,8" Minimum="5" Maximum="40" Value="{Binding PsoIntervalMm}"
+                                        TickFrequency="5" IsSnapToTickEnabled="True" IsEnabled="{Binding PsoEnabled}"
+                                        AutomationProperties.Name="PSO 触发间距" />
+
+                                <UniformGrid Columns="2">
+                                    <Button Content="移动到目标 (Move)" Command="{Binding MoveToTargetCommand}" Margin="0,0,4,0" />
+                                    <Button Content="清空轨迹与标记" Command="{Binding ClearTrailCommand}" Margin="4,0,0,0" />
+                                </UniformGrid>
+
+                                <Separator Margin="0,10" />
+
+                                <!-- Teach Point Table & Recipe Runner -->
+                                <TextBlock Text="点位示教表与工业预设配方" Style="{StaticResource SectionTitle}" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding RecipePresets}" SelectedItem="{Binding SelectedRecipePreset}"
+                                              DisplayMemberPath="Name" AutomationProperties.Name="预设配方选择" />
+                                    <Button Grid.Column="2" Content="载入" Command="{Binding LoadSelectedPresetCommand}" />
+                                </Grid>
+
+                                <UniformGrid Columns="4" Margin="0,0,0,6">
+                                    <Button Content="示教当前" Command="{Binding TeachCurrentPointCommand}" Margin="0,0,3,0" FontSize="11" Padding="4,4" />
+                                    <Button Content="加目标点" Command="{Binding AddTargetAsPointCommand}" Margin="1,0,2,0" FontSize="11" Padding="4,4" />
+                                    <Button Content="删除" Command="{Binding RemoveSelectedPointCommand}" Margin="2,0,1,0" FontSize="11" Padding="4,4" />
+                                    <Button Content="清空" Command="{Binding ClearPointsCommand}" Margin="3,0,0,0" FontSize="11" Padding="4,4" />
+                                </UniformGrid>
+
+                                <Border CornerRadius="6" BorderThickness="1" Height="148"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <ListBox ItemsSource="{Binding TeachPoints}" SelectedItem="{Binding SelectedTeachPoint}"
+                                             Background="Transparent" BorderThickness="0"
+                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type motion:TeachPoint}">
+                                                <Grid Margin="0,1">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="24" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="86" />
+                                                        <ColumnDefinition Width="66" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Index, StringFormat='#{0}'}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding CoordText}" FontFamily="Consolas" FontSize="11"
+                                                               Foreground="{StaticResource PosMetricBrush}" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,6,0" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding ModeShort}" FontFamily="Consolas" FontSize="10"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextAlignment="Right" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Border>
+
+                                <DockPanel Margin="0,8,0,0">
+                                    <CheckBox DockPanel.Dock="Right" Content="循环" IsChecked="{Binding LoopRecipe}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                    <UniformGrid Columns="2">
+                                        <Button Content="单步 Step" Command="{Binding StepNextPointCommand}" Margin="0,0,4,0" />
+                                        <Button Content="运行配方 Run" Command="{Binding RunRecipeCommand}" Margin="4,0,0,0" />
+                                    </UniformGrid>
+                                </DockPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Right XY Telemetry + 2D Stage Canvas + Event Log -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="116" />
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="0" Rows="1" Columns="4">
+                            <UniformGrid.Resources>
+                                <Style TargetType="Border" BasedOn="{StaticResource CompactCardStyle}">
+                                    <Setter Property="Margin" Value="0,0,8,0" />
+                                </Style>
+                            </UniformGrid.Resources>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="X 轴反馈坐标" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding PosXText}" Style="{StaticResource CompactMetricValue}" Foreground="{StaticResource PosMetricBrush}" />
+                                    <TextBlock Text="{Binding CommandCoordText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="Y 轴反馈坐标" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding PosYText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                                    <TextBlock Text="{Binding FollowingErrorText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border>
+                                <StackPanel>
+                                    <TextBlock Text="合成进给速度" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding FeedSpeedText}" Style="{StaticResource CompactMetricValue}" Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                    <TextBlock Text="{Binding VelocityComponentText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0">
+                                <StackPanel>
+                                    <TextBlock Text="视觉触发统计" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding TriggerSummaryText}" Style="{StaticResource CompactMetricValue}" FontSize="17" Margin="0,6,0,2"
+                                               Foreground="{StaticResource ErrMetricBrush}" />
+                                    <TextBlock Text="{Binding LastCycleTimeText}" Style="{StaticResource MetricNote}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True" MinHeight="280"
+                                Background="{StaticResource CanvasBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <controls:XyStageCanvas x:Name="XyCanvas"
+                                                    StageSnapshot="{Binding StageSnapshot, Mode=OneWay}"
+                                                    TeachPoints="{Binding TeachPointsSnapshot, Mode=OneWay}"
+                                                    SelectedTeachPoint="{Binding SelectedTeachPoint, Mode=OneWay}"
+                                                    PreviewPlan="{Binding PreviewPlan, Mode=OneWay}"
+                                                    WorkspaceWidthMm="{Binding WorkspaceWidthMm, Mode=OneWay}"
+                                                    WorkspaceHeightMm="{Binding WorkspaceHeightMm, Mode=OneWay}"
+                                                    StageClicked="XyCanvas_StageClicked" />
+                        </Border>
+
+                        <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,4">
+                                    <Button DockPanel.Dock="Right" Content="清空" Command="{Binding ClearLogsCommand}"
+                                            Padding="8,1" FontSize="11" />
+                                    <TextBlock Text="XY 插补与飞拍事件日志（最新在前）" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding Logs}" Style="{StaticResource LogListBoxStyle}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </UserControl>
