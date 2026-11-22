@@ -79,6 +79,14 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             Assert.Equal(typeof(CalibrationViewModel), nav.History[^1]);
 
             var protocolGroup = vm.NavigationItems.First(i => i.Title == "协议");
+            var opcUaItem = protocolGroup.Children.Single(c => c.Title == "OPC UA");
+            opcUaItem.IsSelected = true;
+            Assert.Equal(typeof(OpcUaViewModel), nav.History[^1]);
+
+            var plcItem = protocolGroup.Children.Single(c => c.Title == "PLC 协议");
+            plcItem.IsSelected = true;
+            Assert.Equal(typeof(PlcProtocolViewModel), nav.History[^1]);
+
             var serialTcpItem = protocolGroup.Children.Single(c => c.Title == "TCP/串口");
             serialTcpItem.IsSelected = true;
             Assert.Equal(typeof(SerialTcpViewModel), nav.History[^1]);

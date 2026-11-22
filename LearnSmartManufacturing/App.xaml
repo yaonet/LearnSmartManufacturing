@@ -33,6 +33,12 @@
             <DataTemplate DataType="{x:Type vm:MqttViewModel}">
                 <views:MqttView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:OpcUaViewModel}">
+                <views:OpcUaView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:PlcProtocolViewModel}">
+                <views:PlcProtocolView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:SerialTcpViewModel}">
                 <views:SerialTcpView />
             </DataTemplate>

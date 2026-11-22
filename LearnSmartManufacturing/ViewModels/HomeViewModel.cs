@@ -14,7 +14,7 @@ namespace LearnSmartManufacturing.ViewModels
         public IReadOnlyList<ModuleInfo> Modules { get; } =
         [
             new ModuleInfo("WPF", "异步编程（UI 心跳/Channel 背压/限流）与 MVVM（校验/命令/WeakReferenceMessenger 解耦）。"),
-            new ModuleInfo("协议", "Modbus（TCP/RTU）、EtherCAT（ESM/WKC/DC）、MQTT（QoS/LWT/续传）与 TCP/串口（粘包拆包状态机与 RS485 半双工）。"),
+            new ModuleInfo("协议", "Modbus、EtherCAT、MQTT、OPC UA、PLC 私有协议（西门子 S7 / 三菱 MC 3E / 欧姆龙 FINS）与 TCP/串口。"),
             new ModuleInfo("机器视觉", "相机选型与快门/带宽、镜头光路与远心/畸变、光源打光与光谱、景深仿真，以及九点手眼与旋转中心标定。"),
             new ModuleInfo("运动控制", "单轴 PLCopen 状态机与 T/S 规划、XY 双轴直线/圆弧插补、点位示教配方与 PSO 飞拍仿真。"),
         ];

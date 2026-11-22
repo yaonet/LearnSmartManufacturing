@@ -23,6 +23,8 @@ namespace LearnSmartManufacturing.ViewModels
                     new NavigationItem("Modbus", typeof(ModbusViewModel)),
                     new NavigationItem("EtherCAT", typeof(EtherCatViewModel)),
                     new NavigationItem("MQTT", typeof(MqttViewModel)),
+                    new NavigationItem("OPC UA", typeof(OpcUaViewModel)),
+                    new NavigationItem("PLC 协议", typeof(PlcProtocolViewModel)),
                     new NavigationItem("TCP/串口", typeof(SerialTcpViewModel))),
                 new NavigationItem("机器视觉", null,
                     new NavigationItem("相机", typeof(CameraViewModel)),

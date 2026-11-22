@@ -16,6 +16,8 @@
 | WPF | MVVM | 已完成 | 零业务 Code-Behind：`ObservableValidator` 跨属性校验、`AsyncRelayCommand` 防重入/取消、`WeakReferenceMessenger` 双向解耦与数据流追踪 |
 | 协议 | Modbus | 已完成 | 手写 Modbus TCP (MBAP) / RTU (CRC-16) 编解码、帧解剖画布、ABCD/CDAB/DCBA/BADC 字节序、内置模拟 PLC 轮询与真实 Socket 客户端 |
 | 协议 | MQTT | 已完成 | MQTT 3.1.1 二进制编解码、QoS 0/1/2 握手时序画布（含丢包/DUP 重传）、ISA-95 通配符演练场、Retain/LWT、断网续传与真实 TCP 客户端 |
+| 协议 | OPC UA | 已完成 | UACP 二进制头编解码、X.509 证书信任拦截 (0x801A0000)、地址空间节点树 Read/Write/Method RPC、Subscription 死区过滤示波与 KeepAlive |
+| 协议 | PLC 协议 | 已完成 | 西门子 S7 (TPKT+COTP+S7Comm)、三菱 MC SLMP 3E 二进制与欧姆龙 FINS/TCP 报文编解码解剖、大小端/CDAB/S7String 读写仿真、典型报错帧与 PDU 批量打包优化 |
 | 协议 | EtherCAT | 已完成 | EtherCAT 0x88A4 LRW 帧编解码、飞速处理环网与 WKC 校验、ETG.1000 ESM 状态机、CiA 402 伺服 PDO、CoE SDO 邮箱与分布式时钟 (DC) 纳秒抖动示波 |
 | 协议 | TCP/串口 | 已完成 | 二进制/ASCII `\r\n`/定长 12B 三协议粘包半包拆包与 EMI 杂波重同步、真实本机 TCP 环回、RS485 半双工防冲突、指数退避重连与波特率 T3.5 计算 |
 | 运动控制 | 运动控制 | 已完成 | 单轴 HAL + PLCopen 状态机 + T/S 7 段规划示波；XY 双轴 PTP/G01/G02/G03 插补、示教配方与 PSO 飞拍 |

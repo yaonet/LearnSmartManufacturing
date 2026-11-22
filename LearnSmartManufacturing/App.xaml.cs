@@ -33,6 +33,8 @@ namespace LearnSmartManufacturing
                     services.AddTransient<ModbusViewModel>();
                     services.AddTransient<EtherCatViewModel>();
                     services.AddTransient<MqttViewModel>();
+                    services.AddTransient<OpcUaViewModel>();
+                    services.AddTransient<PlcProtocolViewModel>();
                     services.AddTransient<SerialTcpViewModel>();
                     services.AddSingleton<CameraViewModel>();
                     services.AddSingleton<LensViewModel>();
