@@ -94,6 +94,11 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             var patternsItem = vm.NavigationItems.Single(i => i.Title == "设计模式");
             patternsItem.IsSelected = true;
             Assert.Equal(typeof(DesignPatternsViewModel), nav.History[^1]);
+
+            var wpfGroup = vm.NavigationItems.Single(i => i.Title == "WPF");
+            var prismItem = wpfGroup.Children.Single(c => c.Title == "Prism 框架");
+            prismItem.IsSelected = true;
+            Assert.Equal(typeof(PrismFrameworkViewModel), nav.History[^1]);
         }
 
         private sealed class RecordingNavigationService : ObservableObject, INavigationService

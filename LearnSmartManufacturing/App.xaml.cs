@@ -30,6 +30,7 @@ namespace LearnSmartManufacturing
                     services.AddTransient<SettingsViewModel>();
                     services.AddTransient<AsyncProgrammingViewModel>();
                     services.AddTransient<MvvmViewModel>();
+                    services.AddTransient<PrismFrameworkViewModel>();
                     services.AddTransient<DesignPatternsViewModel>();
                     services.AddTransient<ModbusViewModel>();
                     services.AddTransient<EtherCatViewModel>();

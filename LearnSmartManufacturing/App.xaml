@@ -24,6 +24,9 @@
             <DataTemplate DataType="{x:Type vm:MvvmViewModel}">
                 <views:MvvmView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:PrismFrameworkViewModel}">
+                <views:PrismFrameworkView />
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:DesignPatternsViewModel}">
                 <views:DesignPatternsView />
             </DataTemplate>

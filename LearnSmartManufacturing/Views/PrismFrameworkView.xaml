@@ -1,0 +1,526 @@
+<UserControl x:Class="LearnSmartManufacturing.Views.PrismFrameworkView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:LearnSmartManufacturing.ViewModels"
+             xmlns:pr="clr-namespace:LearnSmartManufacturing.Models.Prism"
+             xmlns:controls="clr-namespace:LearnSmartManufacturing.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:PrismFrameworkViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="820" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="CyanMetricBrush" Color="#0891B2" />
+        <SolidColorBrush x:Key="PurpleMetricBrush" Color="#9A5CE6" />
+        <SolidColorBrush x:Key="CanvasBrush" Color="#141420" />
+        <SolidColorBrush x:Key="CodeTextBrush" Color="#CDD6F4" />
+
+        <Style x:Key="CompactCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style x:Key="CompactMetricValue" TargetType="TextBlock" BasedOn="{StaticResource MetricValue}">
+            <Setter Property="FontSize" Value="15.5" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="Margin" Value="0,3,0,0" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="SmallActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style x:Key="DarkSafeListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="6,3.5" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="14,10,14,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock Text="WPF Prism 企业级复合应用框架实验室 · Region、模块化与事件聚合" FontSize="19" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding StatusBanner, Mode=OneWay}" Style="{StaticResource MetricLabel}" Margin="0,2,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- 3-Tab Prism Interactive Workbench -->
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+
+            <!-- Tab 1: Region Navigation, Lifecycle Hooks & Journal -->
+            <TabItem Header="Region 导航、生命周期与 Journal 回退">
+                <Grid Margin="4,10,4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Region Host + 5-Step Lifecycle Canvas -->
+                    <Border Grid.Row="0" Height="138" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource CanvasBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <controls:PrismRegionLifecycleCanvas Outcome="{Binding NavigationOutcome, Mode=OneWay}" />
+                    </Border>
+
+                    <!-- Left Navigation Controls + Right KPI & Trace -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="374" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Panel -->
+                        <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <TextBlock Text="1. RequestNavigate 导航目标与参数" Style="{StaticResource SectionTitle}" />
+                                    <ComboBox ItemsSource="{Binding TargetViewOptions}" SelectedItem="{Binding SelectedTargetView}"
+                                              DisplayMemberPath="DisplayName" Margin="0,0,0,8" AutomationProperties.Name="目标导航视图" />
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="stationId 参数" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                            <TextBox Text="{Binding ParamStationId, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="recipeId 参数" Style="{StaticResource MetricLabel}" Margin="0,0,0,2" />
+                                            <TextBox Text="{Binding ParamRecipeId, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <UniformGrid Columns="3" Margin="0,0,0,10">
+                                        <Button Content="执行导航" Style="{StaticResource SmallActionButton}" Command="{Binding NavigateCommand}" Margin="0,0,4,0" />
+                                        <Button Content="◀ Journal 后退" Style="{StaticResource SmallActionButton}" Command="{Binding GoBackCommand}" Margin="2,0,2,0" />
+                                        <Button Content="Journal 前进 ▶" Style="{StaticResource SmallActionButton}" Command="{Binding GoForwardCommand}" Margin="4,0,0,0" />
+                                    </UniformGrid>
+
+                                    <Separator Margin="0,0,0,10" />
+
+                                    <TextBlock Text="2. 生命周期接口守卫开关" Style="{StaticResource SectionTitle}" />
+                                    <CheckBox Content="当前页未保存配方 (触发 Confirm 拦截)" IsChecked="{Binding IsCurrentRecipeDirty}" Margin="0,0,0,4" />
+                                    <CheckBox Content="确认弹窗点“是” (AllowLeave = true)" IsChecked="{Binding ConfirmDialogAllowsLeave}" Margin="0,0,0,6" />
+                                    <CheckBox Content="IsNavigationTarget = true (复用实例)" IsChecked="{Binding ReuseNavigationTarget}" Margin="0,0,0,4" />
+                                    <CheckBox Content="KeepAlive = true (离开后驻留 Region)" IsChecked="{Binding KeepAliveInRegion}" Margin="0,0,0,10" />
+
+                                    <TextBlock Text="快捷演练场景：" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
+                                    <WrapPanel>
+                                        <Button Content="演示脏数据拦截" Style="{StaticResource SmallActionButton}" Command="{Binding ApplyNavPresetCommand}" CommandParameter="DirtyBlock" Margin="0,0,5,5" />
+                                        <Button Content="KeepAlive=false 释放" Style="{StaticResource SmallActionButton}" Command="{Binding ApplyNavPresetCommand}" CommandParameter="EvictKeepAlive" Margin="0,0,5,5" />
+                                        <Button Content="IsTarget=false 重建实例" Style="{StaticResource SmallActionButton}" Command="{Binding ApplyNavPresetCommand}" CommandParameter="ForceRecreate" Margin="0,0,0,5" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Right Panel -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- 4 KPI Cards -->
+                            <UniformGrid Grid.Row="0" Columns="4">
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="0,0,6,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="当前活动视图" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding ActiveViewSummary, Mode=OneWay}" FontFamily="Consolas" FontSize="12.5" FontWeight="SemiBold"
+                                                   Margin="0,4,0,0" TextTrimming="CharacterEllipsis" Foreground="{StaticResource CyanMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="Region 驻留实例" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding RegionCountText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{StaticResource PurpleMetricBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="3,0,3,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="Journal 游标" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding JournalDepthText, Mode=OneWay}" Style="{StaticResource CompactMetricValue}"
+                                                   Foreground="{DynamicResource SystemFillColorCautionBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="6,0,0,0" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="最近导航判定" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding LastNavStatusText, Mode=OneWay}" FontFamily="Consolas" FontSize="15.5" FontWeight="SemiBold" Margin="0,3,0,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLastNavSucceeded}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- Journal Breadcrumb Strip -->
+                            <Border Grid.Row="2" Style="{StaticResource CompactCardStyle}" Padding="12,7">
+                                <StackPanel>
+                                    <TextBlock Text="IRegionNavigationJournal 历史栈" Style="{StaticResource MetricLabel}" Margin="0,0,0,4" />
+                                    <ItemsControl ItemsSource="{Binding NavigationOutcome.JournalEntries}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="4" Padding="7,2" Margin="0,0,6,3"
+                                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                    <TextBlock Text="{Binding Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Lifecycle Trace Log -->
+                            <Border Grid.Row="4" Style="{StaticResource CompactCardStyle}" Padding="12,8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Content="清空" Style="{StaticResource SmallActionButton}"
+                                                Command="{Binding ClearNavLogCommand}" Padding="8,1" />
+                                        <TextBlock Text="导航生命周期钩子调用流水 (含实例编号 #ID 追踪)" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding NavigationLog}" Style="{StaticResource DarkSafeListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="8,4" Margin="0,1" CornerRadius="5"
+                                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                    <TextBlock Text="{Binding Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" TextWrapping="Wrap" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: Modularity, EventAggregator, CompositeCommand, IDialogService -->
+            <TabItem Header="模块化 · EventAggregator · CompositeCommand · IDialogService">
+                <Grid Margin="4,10,4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Modularity DAG + EventAggregator Routing Canvas -->
+                    <Border Grid.Row="0" Height="142" CornerRadius="8" ClipToBounds="True"
+                            Background="{StaticResource CanvasBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <controls:PrismModularityCanvas
+                            Modules="{Binding ModuleSnapshots, Mode=OneWay}"
+                            Deliveries="{Binding EventDeliveries, Mode=OneWay}" />
+                    </Border>
+
+                    <!-- Bottom 2 Columns -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Column: IModuleManager + EventAggregator -->
+                        <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <!-- 1. Modularity -->
+                                    <TextBlock Text="1. IModuleCatalog 按需加载 &amp; 拓扑依赖自动解析" Style="{StaticResource SectionTitle}" />
+                                    <WrapPanel Margin="0,0,0,6">
+                                        <Button Content="加载 PlcComm" Style="{StaticResource SmallActionButton}" Command="{Binding LoadModuleCommand}" CommandParameter="PlcCommModule" Margin="0,0,5,5" />
+                                        <Button Content="加载 Vision" Style="{StaticResource SmallActionButton}" Command="{Binding LoadModuleCommand}" CommandParameter="VisionModule" Margin="0,0,5,5" />
+                                        <Button Content="加载 Motion (依赖PLC)" Style="{StaticResource SmallActionButton}" Command="{Binding LoadModuleCommand}" CommandParameter="MotionModule" Margin="0,0,5,5" />
+                                        <Button Content="加载 MesReport (自动拉起双依赖!)" Style="{StaticResource SmallActionButton}" Command="{Binding LoadModuleCommand}" CommandParameter="MesReportModule" Margin="0,0,5,5" />
+                                        <Button Content="重置目录" Style="{StaticResource SmallActionButton}" Command="{Binding ResetModulesCommand}" Margin="0,0,0,5" />
+                                    </WrapPanel>
+
+                                    <Border CornerRadius="6" Padding="8,6" Margin="0,0,0,10" MaxHeight="96"
+                                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding ModuleLoadLogs}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Mode=OneWay}" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="0,1" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Border>
+
+                                    <Separator Margin="0,0,0,10" />
+
+                                    <!-- 2. EventAggregator -->
+                                    <TextBlock Text="2. IEventAggregator (PubSubEvent 线程调度 / Filter / 弱引用)" Style="{StaticResource SectionTitle}" />
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="1.2*" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Grid.Column="0" ItemsSource="{Binding AlarmSeverityOptions}" SelectedItem="{Binding SelectedAlarmSeverity}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="告警级别" />
+                                        <ComboBox Grid.Column="2" ItemsSource="{Binding ThreadOptions}" SelectedItem="{Binding SelectedThreadOption}"
+                                                  DisplayMemberPath="Name" AutomationProperties.Name="线程调度选项" />
+                                    </Grid>
+
+                                    <CheckBox Content="UI 订阅者启用 Filter 过滤：仅接收 Critical 急停告警" IsChecked="{Binding FilterCriticalOnly}" Margin="0,0,0,4" />
+                                    <CheckBox Content="演示陷阱：keepSubscriberReferenceAlive = true (强引用泄漏风险)" IsChecked="{Binding KeepStrongReference}" Margin="0,0,0,8" />
+
+                                    <Button Content="Publish 发布 StationAlarmEvent 告警事件" Command="{Binding PublishAlarmCommand}" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Right Column: CompositeCommand + IDialogService -->
+                        <Border Grid.Column="2" Style="{StaticResource CompactCardStyle}" Padding="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="14,12">
+                                    <!-- 3. CompositeCommand -->
+                                    <TextBlock Text="3. CompositeCommand 全局聚合命令 (一键保存全部模块)" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="3" Margin="0,0,0,6">
+                                        <CheckBox Content="PLC 参数有效" IsChecked="{Binding PlcModuleCanSave}" />
+                                        <CheckBox Content="视觉配方有效" IsChecked="{Binding VisionModuleCanSave}" />
+                                        <CheckBox Content="运动点位有效" IsChecked="{Binding MotionModuleCanSave}" />
+                                    </UniformGrid>
+
+                                    <Button Content="执行 SaveAllCompositeCommand (聚合 CanExecute)"
+                                            Command="{Binding ExecuteCompositeSaveCommand}" Margin="0,0,0,6" />
+
+                                    <Border CornerRadius="6" Padding="8,6" Margin="0,0,0,10"
+                                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding CompositeResult.Summary, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" TextWrapping="Wrap">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CanExecuteCompositeSave}" Value="True">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding CompositeResult.ExecutedModules}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Mode=OneWay}" FontFamily="Consolas" FontSize="10" Foreground="{StaticResource CyanMetricBrush}" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Separator Margin="0,0,0,10" />
+
+                                    <!-- 4. IDialogService + IDialogAware -->
+                                    <DockPanel Margin="0,0,0,6">
+                                        <Button DockPanel.Dock="Right" Content="ShowDialog(&quot;RecipeApprove&quot;)"
+                                                Style="{StaticResource SmallActionButton}" Command="{Binding OpenApproveDialogCommand}" />
+                                        <TextBlock Text="4. IDialogService &amp; IDialogAware 可测弹窗服务" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center" />
+                                    </DockPanel>
+
+                                    <!-- Inline Simulated IDialogAware Modal Card -->
+                                    <Border CornerRadius="6" Padding="10,8" Margin="0,0,0,8" BorderThickness="1"
+                                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                            BorderBrush="{StaticResource CyanMetricBrush}"
+                                            Visibility="{Binding IsDialogOpen, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel>
+                                            <TextBlock Text="模拟弹窗：RecipeApproveDialog (实现 IDialogAware)" FontSize="11.5" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource CyanMetricBrush}" Margin="0,0,0,3" />
+                                            <TextBlock FontFamily="Consolas" FontSize="10.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,6">
+                                                <Run Text="OnDialogOpened 参数: " /><Run Text="{Binding DialogIncomingParamsText, Mode=OneWay}" />
+                                            </TextBlock>
+                                            <CheckBox Content="操作员权限密码已校验 (满足 CanCloseDialog() == true)" IsChecked="{Binding DialogOperatorVerified}" Margin="0,0,0,8" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="确定放行 (ButtonResult.OK)" Style="{StaticResource SmallActionButton}"
+                                                        Command="{Binding ConfirmApproveDialogCommand}" Margin="0,0,8,0" />
+                                                <Button Content="取消 (ButtonResult.Cancel)" Style="{StaticResource SmallActionButton}"
+                                                        Command="{Binding CancelApproveDialogCommand}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border CornerRadius="6" Padding="8,6"
+                                            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                        <TextBlock Text="{Binding DialogStatusBanner, Mode=OneWay}" FontFamily="Consolas" FontSize="10.5" TextWrapping="Wrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDialogResultOk}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 3: Prism Core Reference & Comparison with CommunityToolkit.Mvvm -->
+            <TabItem Header="Prism 架构速查 &amp; 与 CommunityToolkit.Mvvm 选型对照">
+                <Grid Margin="4,10,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="356" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Concept Selector -->
+                    <Border Grid.Column="0" Style="{StaticResource CompactCardStyle}" Padding="10,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Prism 8 大核心机制与面试高频考点" Style="{StaticResource SectionTitle}" />
+                            <ListBox Grid.Row="1" ItemsSource="{Binding Concepts}" SelectedItem="{Binding SelectedConcept, Mode=TwoWay}"
+                                     Style="{StaticResource DarkSafeListBox}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type pr:PrismConceptInfo}">
+                                        <Border Padding="8,6" Margin="0,1" CornerRadius="5"
+                                                Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CategoryBadge, Mode=OneWay}" Margin="8,0,0,0"
+                                                               FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource PurpleMetricBrush}" />
+                                                    <TextBlock Text="{Binding Title, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </DockPanel>
+                                                <TextBlock Text="{Binding ApiSignature, Mode=OneWay}" FontFamily="Consolas" FontSize="10"
+                                                           Foreground="{StaticResource CyanMetricBrush}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right Detail Card + Prism vs Toolkit Table -->
+                    <Border Grid.Column="2" Style="{StaticResource CompactCardStyle}" Padding="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="16,12">
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="{Binding JumpToConceptLabText, Mode=OneWay}"
+                                            Style="{StaticResource SmallActionButton}"
+                                            Command="{Binding JumpToConceptLabCommand}"
+                                            IsEnabled="{Binding HasConceptLab}" VerticalAlignment="Center" />
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding SelectedConcept.Title, Mode=OneWay}" FontSize="16.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding SelectedConcept.ApiSignature, Mode=OneWay}" FontFamily="Consolas" FontSize="11.5"
+                                                   Foreground="{StaticResource CyanMetricBrush}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <TextBlock Text="{Binding SelectedConcept.CoreValue, Mode=OneWay}" Style="{StaticResource MetricLabel}"
+                                           TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                <TextBlock Text="标准 Prism WPF 核心代码骨架" Style="{StaticResource SectionTitle}" />
+                                <Border CornerRadius="7" Padding="12,9" Margin="0,0,0,8"
+                                        Background="{StaticResource CanvasBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <TextBlock Text="{Binding SelectedConcept.CodeSkeleton, Mode=OneWay}"
+                                               FontFamily="Consolas" FontSize="11" Foreground="{StaticResource CodeTextBrush}"
+                                               TextWrapping="Wrap" />
+                                </Border>
+
+                                <Border CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                    <StackPanel>
+                                        <TextBlock Text="面试高频追问 &amp; 避坑指南" FontSize="11.5" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SystemFillColorCautionBrush}" Margin="0,0,0,3" />
+                                        <TextBlock Text="{Binding SelectedConcept.InterviewPitfall, Mode=OneWay}" FontSize="11.5" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="架构选型对照：Prism vs CommunityToolkit.Mvvm + Microsoft.Extensions.DI" Style="{StaticResource SectionTitle}" />
+                                <ItemsControl ItemsSource="{Binding ComparisonRows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type pr:PrismVsToolkitRow}">
+                                            <Border Padding="8,5" Margin="0,0,0,4" CornerRadius="5"
+                                                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="108" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="10" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Dimension, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource PurpleMetricBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" FontSize="10.5" TextWrapping="Wrap" VerticalAlignment="Center">
+                                                        <Run Text="Prism: " Foreground="{StaticResource CyanMetricBrush}" FontWeight="SemiBold" />
+                                                        <Run Text="{Binding PrismApproach, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="3" FontSize="10.5" TextWrapping="Wrap" VerticalAlignment="Center">
+                                                        <Run Text="Toolkit+DI: " Foreground="{DynamicResource SystemFillColorSuccessBrush}" FontWeight="SemiBold" />
+                                                        <Run Text="{Binding ToolkitApproach, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>
