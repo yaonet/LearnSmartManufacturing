@@ -90,6 +90,10 @@ namespace LearnSmartManufacturing.Tests.ViewModels
             var serialTcpItem = protocolGroup.Children.Single(c => c.Title == "TCP/串口");
             serialTcpItem.IsSelected = true;
             Assert.Equal(typeof(SerialTcpViewModel), nav.History[^1]);
+
+            var patternsItem = vm.NavigationItems.Single(i => i.Title == "设计模式");
+            patternsItem.IsSelected = true;
+            Assert.Equal(typeof(DesignPatternsViewModel), nav.History[^1]);
         }
 
         private sealed class RecordingNavigationService : ObservableObject, INavigationService

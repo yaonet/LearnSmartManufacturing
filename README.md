@@ -14,6 +14,7 @@
 | 系统 | 首页 / 设置 | 已完成 | 模块概览、WPF Fluent 浅色 / 深色 / 跟随系统主题实时切换 |
 | WPF | 异步编程 | 已完成 | 60 FPS UI 心跳/死锁对照、BoundedChannel 背压仿真、SemaphoreSlim 多设备并发泳道与联动取消 |
 | WPF | MVVM | 已完成 | 零业务 Code-Behind：`ObservableValidator` 跨属性校验、`AsyncRelayCommand` 防重入/取消、`WeakReferenceMessenger` 双向解耦与数据流追踪 |
+| 架构 | 设计模式 | 已完成 | 上位机 10 大高频 GoF 模式交互实验室：工厂 + 装饰器 (Logging/Retry/CacheFallback) + 责任链过站流水线、5 态安全联锁状态机 + 观察者广播、质检策略对比与命令模式 Undo/Redo 栈 |
 | 协议 | Modbus | 已完成 | 手写 Modbus TCP (MBAP) / RTU (CRC-16) 编解码、帧解剖画布、ABCD/CDAB/DCBA/BADC 字节序、内置模拟 PLC 轮询与真实 Socket 客户端 |
 | 协议 | MQTT | 已完成 | MQTT 3.1.1 二进制编解码、QoS 0/1/2 握手时序画布（含丢包/DUP 重传）、ISA-95 通配符演练场、Retain/LWT、断网续传与真实 TCP 客户端 |
 | 协议 | OPC UA | 已完成 | UACP 二进制头编解码、X.509 证书信任拦截 (0x801A0000)、地址空间节点树 Read/Write/Method RPC、Subscription 死区过滤示波与 KeepAlive |

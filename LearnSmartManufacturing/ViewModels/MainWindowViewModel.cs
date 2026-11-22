@@ -19,6 +19,7 @@ namespace LearnSmartManufacturing.ViewModels
                 new NavigationItem("WPF", null,
                     new NavigationItem("异步编程", typeof(AsyncProgrammingViewModel)),
                     new NavigationItem("MVVM", typeof(MvvmViewModel))),
+                new NavigationItem("设计模式", typeof(DesignPatternsViewModel)),
                 new NavigationItem("协议", null,
                     new NavigationItem("Modbus", typeof(ModbusViewModel)),
                     new NavigationItem("EtherCAT", typeof(EtherCatViewModel)),
